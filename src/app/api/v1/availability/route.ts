@@ -28,10 +28,21 @@ export async function GET(request: Request) {
             );
         }
 
-        const slots = await AvailabilityService.getAvailableSlots(serviceId, date);
+        const smartSlots = await AvailabilityService.getSmartAvailability(serviceId, date);
 
         return NextResponse.json(
-            ApiResponseBuilder.success(slots, { total: slots.length, date, service_id: serviceId })
+            ApiResponseBuilder.success(smartSlots.raw_slots, {
+                total: smartSlots.raw_slots.length,
+                date,
+                service_id: serviceId,
+                ai_hint: smartSlots.ai_hint,
+                smart_search: {
+                    requested_date: smartSlots.requested_date,
+                    actual_date_searched: smartSlots.actual_date_searched,
+                    grouped_slots: smartSlots.slots,
+                    continuous_blocks: smartSlots.continuous_blocks
+                }
+            })
         );
     } catch (error) {
         return handleError(error);

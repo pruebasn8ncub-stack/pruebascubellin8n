@@ -43,7 +43,7 @@ export class AppointmentsService {
                     ends_at,
                     profiles:professional_id(full_name),
                     physical_resources:physical_resource_id(name, type),
-                    service_phases:service_phase_id(phase_order, duration_minutes, requires_resource_type, label)
+                    service_phases:service_phase_id(phase_order, duration_minutes, requires_resource_type, label, sub_services:sub_service_id(name, color))
                 )
             `)
             .order('starts_at', { ascending: true });

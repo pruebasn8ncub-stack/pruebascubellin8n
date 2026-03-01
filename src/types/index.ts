@@ -30,6 +30,7 @@ export interface Service {
     id: string;
     name: string;
     description: string | null;
+    color: string; // Hex color for visual identification in the agenda
     is_active: boolean;
     is_composite: boolean;
     duration_minutes: number;

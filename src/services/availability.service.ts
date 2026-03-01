@@ -376,6 +376,126 @@ export class AvailabilityService {
 
         return slots;
     }
+
+    /**
+     * Devuelve la disponibilidad formateada para Inteligencia Artificial.
+     * Si el día solicitado tiene muy pocos cupos, busca proactivamente en los siguientes días.
+     */
+    static async getSmartAvailability(serviceId: string, requestedDate: string): Promise<{
+        requested_date: string;
+        actual_date_searched: string;
+        slots: { morning: string[], afternoon: string[], evening: string[] };
+        continuous_blocks: { start_time: string, end_time: string }[];
+        ai_hint: string;
+        raw_slots: string[];
+    }> {
+        const MAX_DAYS_LOOKAHEAD = 3;
+        let currentDateStr = requestedDate;
+        let foundSlots: string[] = [];
+        let lookaheadCount = 0;
+
+        // Búsqueda proactiva
+        while (lookaheadCount < MAX_DAYS_LOOKAHEAD) {
+            foundSlots = await this.getAvailableSlots(serviceId, currentDateStr);
+            if (foundSlots.length >= 3) {
+                break; // Encontramos un día decente
+            }
+            // Avanzar 1 día
+            const nextDate = new Date(`${currentDateStr}T12:00:00Z`);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+            currentDateStr = nextDate.toISOString().split('T')[0];
+            lookaheadCount++;
+        }
+
+        // Obtener duración del servicio para calcular el final del bloque
+        const supabase = createClient();
+        const { data: service } = await supabase
+            .from('services')
+            .select('duration_minutes')
+            .eq('id', serviceId)
+            .single();
+        const durationMinutes = service?.duration_minutes || 60;
+
+        // Procesar bloques continuos
+        const continuous_blocks: { start_time: string, end_time: string }[] = [];
+        if (foundSlots.length > 0) {
+            let currentBlockStart = new Date(foundSlots[0]);
+            let currentBlockEnd = addMinutes(currentBlockStart, durationMinutes);
+
+            const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Santiago', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+            for (let i = 1; i < foundSlots.length; i++) {
+                const slotTime = new Date(foundSlots[i]);
+                const expectedNextSlot = addMinutes(new Date(foundSlots[i - 1]), 15);
+
+                if (slotTime.getTime() === expectedNextSlot.getTime()) {
+                    // Contiguo, extender fin
+                    currentBlockEnd = addMinutes(slotTime, durationMinutes);
+                } else {
+                    // Se rompió la continuidad, guardar bloque anterior
+                    continuous_blocks.push({
+                        start_time: formatter.format(currentBlockStart),
+                        end_time: formatter.format(currentBlockEnd)
+                    });
+
+                    // Iniciar nuevo bloque
+                    currentBlockStart = slotTime;
+                    currentBlockEnd = addMinutes(slotTime, durationMinutes);
+                }
+            }
+            // Guardar último bloque
+            continuous_blocks.push({
+                start_time: formatter.format(currentBlockStart),
+                end_time: formatter.format(currentBlockEnd)
+            });
+        }
+
+        // Agrupar los slots del día que devolvió resultados
+        const slots = { morning: [] as string[], afternoon: [] as string[], evening: [] as string[] };
+        for (const slotIso of foundSlots) {
+            const dateObj = new Date(slotIso);
+            const formatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Santiago', hour: 'numeric', hourCycle: 'h23' });
+            const hour = parseInt(formatter.format(dateObj), 10);
+
+            if (hour < 12) slots.morning.push(slotIso);
+            else if (hour < 18) slots.afternoon.push(slotIso);
+            else slots.evening.push(slotIso);
+        }
+
+        // Construir Frase Natural (ai_hint)
+        let ai_hint = '';
+        const reqStr = requestedDate;
+        const actStr = currentDateStr;
+
+        if (continuous_blocks.length === 0) {
+            ai_hint = `No encontré ninguna disponibilidad para el ${reqStr} ni para los ${MAX_DAYS_LOOKAHEAD - 1} días siguientes.`;
+        } else {
+            const dayWarning = (reqStr !== actStr) ? `No tengo cupos para el ${reqStr}. Sin embargo, busqué para el ${actStr} y ` : `Para el ${actStr} `;
+
+            const blockPhrases = continuous_blocks.map(b => `de ${b.start_time} a ${b.end_time}`);
+            let blocksStr = '';
+
+            if (blockPhrases.length === 1) {
+                blocksStr = `tengo disponibilidad continua ${blockPhrases[0]}`;
+            } else if (blockPhrases.length === 2) {
+                blocksStr = `tengo disponibilidad ${blockPhrases[0]} y ${blockPhrases[1]}`;
+            } else {
+                const last = blockPhrases.pop();
+                blocksStr = `tengo disponibilidad ${blockPhrases.join(', ')} y ${last}`;
+            }
+
+            ai_hint = `${dayWarning}${blocksStr}.`;
+        }
+
+        return {
+            requested_date: requestedDate,
+            actual_date_searched: currentDateStr,
+            slots,
+            continuous_blocks,
+            ai_hint,
+            raw_slots: foundSlots
+        };
+    }
 }
 
 // ── Helper functions ────────────────────────────────────────────────────
