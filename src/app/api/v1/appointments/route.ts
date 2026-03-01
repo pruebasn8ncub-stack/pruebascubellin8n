@@ -23,20 +23,9 @@ export async function GET(request: Request) {
         return NextResponse.json(
             ApiResponseBuilder.success(appointments, { total: appointments.length })
         );
-    } catch (error: any) {
-        // TEMP DEBUGGING IN PROD:
-        return NextResponse.json(
-            {
-                success: false,
-                error: {
-                    code: 'RAW_ERROR',
-                    message: error?.message || String(error),
-                    statusCode: 500,
-                    details: error?.stack
-                }
-            },
-            { status: 500 }
-        );
+    } catch (error) {
+        // Safe standard error handling
+        return handleError(error);
     }
 }
 
