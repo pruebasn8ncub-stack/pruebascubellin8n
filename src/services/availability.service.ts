@@ -386,15 +386,7 @@ export class AvailabilityService {
         const dayStartIso = new Date(`${date}T00:00:00-03:00`).toISOString();
         const dayEndIso = new Date(`${date}T23:59:59-03:00`).toISOString();
         const searchDateObj = new Date(`${date}T12:00:00-03:00`);
-        const startPartsIndex = searchDateObj.getDay() === 0 ? 6 : searchDateObj.getDay() - 1; // getDay: 0=Sun. Our DB: 0=Mon, ... 6=Sun. Wait, actually DB is 0=Monday? Let's check `getTimeParts`.
-
-        // Use getTimeParts to be safe and consistent with the engine
-        const getIdx = (d: Date) => {
-            const day = d.getDay();
-            return day === 0 ? 6 : day - 1;
-        };
-
-        const targetDayIndex = getIdx(searchDateObj);
+        const targetDayIndex = getTimeParts(searchDateObj).dayIndex;
 
         // Fetch everything concurrently
         const [
@@ -462,8 +454,10 @@ export class AvailabilityService {
                     // 3. Professional Available?
                     let allocatedProfId = null;
                     if (reqFraction > 0) {
-                        const sTimeStr = String(currentPhaseStart.getHours()).padStart(2, '0') + ':' + String(currentPhaseStart.getMinutes()).padStart(2, '0') + ':00';
-                        const eTimeStr = String(currentPhaseEnd.getHours()).padStart(2, '0') + ':' + String(currentPhaseEnd.getMinutes()).padStart(2, '0') + ':00';
+                        const sParts = getTimeParts(currentPhaseStart);
+                        const eParts = getTimeParts(currentPhaseEnd);
+                        const sTimeStr = sParts.time;
+                        const eTimeStr = eParts.time;
 
                         const freeProf = professionals.find(p => {
                             const sched = schedules.find(s => s.professional_id === p.id);
