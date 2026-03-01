@@ -23,12 +23,8 @@ export async function GET(request: Request) {
         return NextResponse.json(
             ApiResponseBuilder.success(appointments, { total: appointments.length })
         );
-    } catch (error: any) {
-        // TEMPORARY: Expose the error detail to the client for debugging
-        return NextResponse.json(
-            ApiResponseBuilder.error(error.message || 'Unknown error', 'INTERNAL_SERVER_ERROR', 500, error.stack),
-            { status: 500 }
-        );
+    } catch (error) {
+        return handleError(error);
     }
 }
 
