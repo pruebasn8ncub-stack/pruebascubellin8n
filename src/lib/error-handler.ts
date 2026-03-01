@@ -22,10 +22,11 @@ export function handleError(error: unknown) {
     }
 
     // 2. Operational App Errors (Expected)
-    if (error instanceof AppError) {
+    if (error instanceof AppError || (error !== null && typeof error === 'object' && (error as any).name === 'AppError')) {
+        const appError = error as AppError;
         return NextResponse.json(
-            ApiResponseBuilder.error(error.message, error.code, error.statusCode, error.details),
-            { status: error.statusCode }
+            ApiResponseBuilder.error(appError.message, appError.code, appError.statusCode, appError.details),
+            { status: appError.statusCode || 500 }
         );
     }
 
