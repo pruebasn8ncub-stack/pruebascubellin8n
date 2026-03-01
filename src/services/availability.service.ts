@@ -346,30 +346,169 @@ export class AvailabilityService {
     static async getAvailableSlots(serviceId: string, date: string): Promise<string[]> {
         const supabase = createClient();
 
+        // 1. Fetch Service Context
         const { data: service } = await supabase
             .from('services')
-            .select('duration_minutes')
+            .select('*')
             .eq('id', serviceId)
             .single();
 
-        if (!service) return [];
+        if (!service || !service.is_active) return [];
+
+        let phases: ServicePhase[] = [];
+        if (service.is_composite) {
+            const { data: dbPhases } = await supabase
+                .from('service_phases')
+                .select('*')
+                .eq('service_id', serviceId)
+                .order('phase_order', { ascending: true });
+            phases = dbPhases || [];
+        } else {
+            const { data: existingPhases } = await supabase
+                .from('service_phases')
+                .select('*')
+                .eq('service_id', serviceId)
+                .order('phase_order', { ascending: true });
+            if (existingPhases && existingPhases.length > 0) {
+                phases = existingPhases;
+            } else {
+                phases = [{
+                    id: '__virtual__',
+                    phase_order: 1,
+                    duration_minutes: service.duration_minutes,
+                    requires_professional_fraction: parseFloat(service.required_professionals.toString()),
+                    requires_resource_type: service.required_resource_type,
+                } as any];
+            }
+        }
+
+        // 2. Pre-fetch Daily Data explicitly using local timezone reference
+        const dayStartIso = new Date(`${date}T00:00:00-03:00`).toISOString();
+        const dayEndIso = new Date(`${date}T23:59:59-03:00`).toISOString();
+        const searchDateObj = new Date(`${date}T12:00:00-03:00`);
+        const startPartsIndex = searchDateObj.getDay() === 0 ? 6 : searchDateObj.getDay() - 1; // getDay: 0=Sun. Our DB: 0=Mon, ... 6=Sun. Wait, actually DB is 0=Monday? Let's check `getTimeParts`.
+
+        // Use getTimeParts to be safe and consistent with the engine
+        const getIdx = (d: Date) => {
+            const day = d.getDay();
+            return day === 0 ? 6 : day - 1;
+        };
+
+        const targetDayIndex = getIdx(searchDateObj);
+
+        // Fetch everything concurrently
+        const [
+            { data: rawGlobalBlocks },
+            { data: allResources },
+            { data: rawAllocations },
+            { data: rawExceptions },
+            { data: allProfessionals },
+            { data: allSchedules }
+        ] = await Promise.all([
+            supabase.from('schedule_exceptions').select('id, starts_at, ends_at').is('professional_id', null).is('physical_resource_id', null).lt('starts_at', dayEndIso).gt('ends_at', dayStartIso),
+            supabase.from('physical_resources').select('id, name, type').eq('is_active', true),
+            supabase.from('appointment_allocations').select('physical_resource_id, professional_id, starts_at, ends_at, service_phase_id, appointments!inner(status, services(required_professionals)), service_phases(requires_professional_fraction)').lt('starts_at', dayEndIso).gt('ends_at', dayStartIso).neq('appointments.status', 'cancelled'),
+            supabase.from('schedule_exceptions').select('id, professional_id, physical_resource_id, starts_at, ends_at').lt('starts_at', dayEndIso).gt('ends_at', dayStartIso),
+            supabase.from('profiles').select('id, full_name').eq('role', 'professional'),
+            supabase.from('professional_schedules').select('professional_id, start_time, end_time').eq('day_of_week', targetDayIndex)
+        ]);
+
+        const globalBlocks = rawGlobalBlocks || [];
+        const resources = allResources || [];
+        const allocations = rawAllocations || [];
+        const exceptions = rawExceptions || [];
+        const professionals = allProfessionals || [];
+        const schedules = allSchedules || [];
+
+        const isOverlap = (s1o: string, e1o: string, s2o: string, e2o: string) => {
+            return new Date(s1o).getTime() < new Date(e2o).getTime() && new Date(s2o).getTime() < new Date(e1o).getTime();
+        };
 
         const slots: string[] = [];
 
-        // Try every 15-minute slot from 08:00 to 20:00
+        // 3. Evaluate slots purely in memory
         for (let h = 8; h < 20; h++) {
             for (let m = 0; m < 60; m += 15) {
-                const slotStart = new Date(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`);
-                const slotEnd = addMinutes(slotStart, service.duration_minutes);
+                const slotStartTime = new Date(`${date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00-03:00`);
+                let isValidSlot = true;
+                let currentPhaseStart = new Date(slotStartTime.getTime());
+                const trialAllocations: any[] = [];
 
-                // Don't try slots that go past 20:00
-                if (slotEnd.getHours() >= 20 && slotEnd.getMinutes() > 0) continue;
+                for (const phase of phases) {
+                    const currentPhaseEnd = addMinutes(currentPhaseStart, phase.duration_minutes);
+                    const phaseStartIso = currentPhaseStart.toISOString();
+                    const phaseEndIso = currentPhaseEnd.toISOString();
+                    const reqFraction = phase.requires_professional_fraction ? parseFloat(phase.requires_professional_fraction.toString()) : 0;
 
-                try {
-                    await AvailabilityService.allocateResourcesForService(serviceId, slotStart);
-                    slots.push(slotStart.toISOString());
-                } catch {
-                    // Not available, skip
+                    // 1. Clinic blocked?
+                    if (globalBlocks.some(b => isOverlap(b.starts_at, b.ends_at, phaseStartIso, phaseEndIso))) {
+                        isValidSlot = false; break;
+                    }
+
+                    // 2. Resource Available?
+                    let allocatedResId = null;
+                    if (phase.requires_resource_type) {
+                        const freeResource = resources.filter(r => r.type === phase.requires_resource_type).find(r => {
+                            if (exceptions.some(e => e.physical_resource_id === r.id && isOverlap(e.starts_at, e.ends_at, phaseStartIso, phaseEndIso))) return false;
+                            if (allocations.some(a => a.physical_resource_id === r.id && isOverlap(a.starts_at, a.ends_at, phaseStartIso, phaseEndIso))) return false;
+                            if (trialAllocations.some(ta => ta.physical_resource_id === r.id && isOverlap(ta.starts_at, ta.ends_at, phaseStartIso, phaseEndIso))) return false;
+                            return true;
+                        });
+
+                        if (!freeResource) { isValidSlot = false; break; }
+                        allocatedResId = freeResource.id;
+                    }
+
+                    // 3. Professional Available?
+                    let allocatedProfId = null;
+                    if (reqFraction > 0) {
+                        const sTimeStr = String(currentPhaseStart.getHours()).padStart(2, '0') + ':' + String(currentPhaseStart.getMinutes()).padStart(2, '0') + ':00';
+                        const eTimeStr = String(currentPhaseEnd.getHours()).padStart(2, '0') + ':' + String(currentPhaseEnd.getMinutes()).padStart(2, '0') + ':00';
+
+                        const freeProf = professionals.find(p => {
+                            const sched = schedules.find(s => s.professional_id === p.id);
+                            if (!sched) return false;
+                            if (sTimeStr < sched.start_time || eTimeStr > sched.end_time) return false;
+                            if (exceptions.some(e => e.professional_id === p.id && isOverlap(e.starts_at, e.ends_at, phaseStartIso, phaseEndIso))) return false;
+
+                            const pAllocations = allocations.filter(a => a.professional_id === p.id && isOverlap(a.starts_at, a.ends_at, phaseStartIso, phaseEndIso));
+                            const pTrials = trialAllocations.filter(a => a.professional_id === p.id && isOverlap(a.starts_at, a.ends_at, phaseStartIso, phaseEndIso));
+
+                            for (let t = currentPhaseStart.getTime(); t < currentPhaseEnd.getTime(); t += 60000) {
+                                let minLoad = 0;
+                                pAllocations.forEach(a => {
+                                    if (t >= new Date(a.starts_at).getTime() && t < new Date(a.ends_at).getTime()) {
+                                        const allocAny = a as any;
+                                        minLoad += parseFloat((allocAny.service_phases?.requires_professional_fraction ?? allocAny.appointments?.services?.required_professionals ?? 1).toString());
+                                    }
+                                });
+                                pTrials.forEach(a => {
+                                    if (t >= new Date(a.starts_at).getTime() && t < new Date(a.ends_at).getTime()) {
+                                        minLoad += a.fraction;
+                                    }
+                                });
+                                if (minLoad + reqFraction > 1.0) return false;
+                            }
+                            return true;
+                        });
+
+                        if (!freeProf) { isValidSlot = false; break; }
+                        allocatedProfId = freeProf.id;
+                    }
+
+                    trialAllocations.push({
+                        starts_at: phaseStartIso,
+                        ends_at: phaseEndIso,
+                        physical_resource_id: allocatedResId,
+                        professional_id: allocatedProfId,
+                        fraction: reqFraction
+                    });
+
+                    currentPhaseStart = currentPhaseEnd;
+                }
+
+                if (isValidSlot && currentPhaseStart.getHours() < 21) {
+                    slots.push(slotStartTime.toISOString());
                 }
             }
         }
