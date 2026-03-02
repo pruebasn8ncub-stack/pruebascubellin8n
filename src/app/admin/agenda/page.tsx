@@ -214,7 +214,7 @@ export default function AgendaPage() {
         setError(null);
         try {
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://187.77.229.36:3000'}/api/v1/appointments?start_date=${encodeURIComponent(start.toISOString())}&end_date=${encodeURIComponent(end.toISOString())}`
+                `/api/v1/appointments?start_date=${encodeURIComponent(start.toISOString())}&end_date=${encodeURIComponent(end.toISOString())}`
             );
             if (!res.ok) throw new Error("Error al obtener las citas");
             const data = await res.json();
