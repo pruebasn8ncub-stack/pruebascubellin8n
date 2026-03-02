@@ -14,6 +14,7 @@ import {
     differenceInMinutes
 } from "date-fns";
 import { es } from "date-fns/locale";
+import { supabase } from "@/lib/supabase";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -213,16 +214,27 @@ export default function AgendaPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(
-                `/api/v1/appointments?start_date=${encodeURIComponent(start.toISOString())}&end_date=${encodeURIComponent(end.toISOString())}`
-            );
-            if (!res.ok) throw new Error("Error al obtener las citas");
-            const data = await res.json();
-            if (data.success && data.data) {
-                setAppointments(data.data as Appointment[]);
-            } else {
-                throw new Error(data.error?.message || "Error desconocido");
+            const { data, error } = await supabase
+                .from('appointments')
+                .select(`
+                    *,
+                    patients:patient_id(id, full_name, email, phone),
+                    services:service_id(name, duration_minutes, color, is_composite),
+                    appointment_allocations(
+                        id, professional_id, physical_resource_id, starts_at, ends_at,
+                        profiles:professional_id(full_name),
+                        physical_resources:physical_resource_id(name, type),
+                        service_phases(phase_order, duration_minutes, label, sub_services(name, color))
+                    )
+                `)
+                .gte('starts_at', start.toISOString())
+                .lte('ends_at', end.toISOString());
+
+            if (error) {
+                throw new Error("Error al obtener las citas directamente desde Supabase: " + error.message);
             }
+
+            setAppointments((data || []) as unknown as Appointment[]);
         } catch (err: any) {
             setError(err.message);
         } finally {
