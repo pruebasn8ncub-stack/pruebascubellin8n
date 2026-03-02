@@ -68,9 +68,9 @@ export default function PatientsPage() {
         setSaving(true);
         const payload = {
             full_name: formData.full_name.trim(),
-            email: formData.email.trim() || null,
-            phone: formData.phone.trim() || null,
-            notes: formData.notes.trim() || null,
+            email: formData.email.trim(),
+            phone: formData.phone.trim(),
+            notes: formData.notes.trim(),
         };
 
         if (editingPatient) {
@@ -247,6 +247,7 @@ export default function PatientsPage() {
                                     <label className="block text-sm font-medium text-blue-100/80 mb-1">Teléfono</label>
                                     <input
                                         type="tel"
+                                        required
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"

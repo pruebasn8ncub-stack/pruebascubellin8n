@@ -221,10 +221,21 @@ export default function AgendaPage() {
                     patients:patient_id(id, full_name, email, phone),
                     services:service_id(name, duration_minutes, color, is_composite),
                     appointment_allocations(
-                        id, professional_id, physical_resource_id, starts_at, ends_at,
+                        id,
+                        service_phase_id,
+                        professional_id, 
+                        physical_resource_id,
+                        starts_at,
+                        ends_at,
                         profiles:professional_id(full_name),
                         physical_resources:physical_resource_id(name, type),
-                        service_phases(phase_order, duration_minutes, label, sub_services(name, color))
+                        service_phases:service_phase_id(
+                            phase_order, 
+                            duration_minutes, 
+                            requires_resource_type, 
+                            label, 
+                            sub_services:services!service_phases_sub_service_id_fkey(name, color)
+                        )
                     )
                 `)
                 .gte('starts_at', start.toISOString())
