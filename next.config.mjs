@@ -14,7 +14,7 @@ const nextConfig = {
         return [
             {
                 source: '/api/v1/:path*',
-                destination: 'http://187.77.229.36:3000/api/v1/:path*',
+                destination: 'https://api-agenda-web.wfrhms.easypanel.host/api/v1/:path*',
             },
         ];
     },
