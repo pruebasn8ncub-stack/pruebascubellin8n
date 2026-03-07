@@ -80,14 +80,20 @@ export function Team() {
 
                                 {/* Badges */}
                                 <div className="relative z-10 flex flex-wrap justify-center gap-2.5 mb-8">
-                                    {member.badges.map((badge, bIdx) => (
-                                        <span
-                                            key={bIdx}
-                                            className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border border-navy/15 text-navy bg-bg-main transition-colors duration-300 group-hover:border-cyan/30 group-hover:bg-cyan-light"
-                                        >
-                                            {badge}
-                                        </span>
-                                    ))}
+                                    {member.badges.map((badge, bIdx) => {
+                                        const isUChile = badge.toLowerCase().includes('uchile') || badge.toLowerCase().includes('u. de chile');
+                                        return (
+                                            <span
+                                                key={bIdx}
+                                                className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border border-navy/15 text-navy bg-bg-main transition-colors duration-300 group-hover:border-cyan/30 group-hover:bg-cyan-light inline-flex items-center gap-1.5"
+                                            >
+                                                {isUChile && (
+                                                    <Image src="/images/logo_uchile.png" alt="Universidad de Chile" width={16} height={16} className="object-contain" />
+                                                )}
+                                                {badge}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Avatar with ring */}
