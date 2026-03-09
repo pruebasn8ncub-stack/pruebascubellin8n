@@ -21,7 +21,16 @@ const config: Config = {
                     dark: "var(--cyan-dark)",
                     light: "var(--cyan-light)",
                 },
-                navy: "var(--navy)",
+                teal: {
+                    DEFAULT: "var(--teal)",
+                    dark: "var(--teal-dark)",
+                    light: "var(--teal-light)",
+                },
+                navy: {
+                    DEFAULT: "var(--navy)",
+                    light: "var(--navy-light)",
+                    dark: "var(--navy-dark)",
+                },
                 "bg-main": "var(--bg-main)",
                 surface: "var(--surface)",
                 text: {

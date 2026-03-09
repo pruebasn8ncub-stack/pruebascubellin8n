@@ -179,24 +179,24 @@ export default function ExceptionsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-cyan to-blue-400">
+                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
                         Excepciones y Bloqueos
                     </h1>
-                    <p className="text-blue-100/50 text-sm mt-1">
+                    <p className="text-slate-500 text-sm mt-1">
                         Feriados, ausencias de profesionales y mantención de equipos.
                     </p>
                 </div>
                 <div className="flex gap-4">
                     <button
                         onClick={fetchData}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                        className="p-2 bg-white hover:bg-slate-50 rounded-xl transition-all"
                         title="Actualizar"
                     >
-                        <RefreshCw className={`w-5 h-5 text-cyan ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-5 h-5 text-teal ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                         onClick={handleOpenModal}
-                        className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all"
+                        className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all"
                     >
                         <Plus className="w-5 h-5" />
                         Nuevo Bloqueo
@@ -205,24 +205,24 @@ export default function ExceptionsPage() {
             </div>
 
             {/* Info Banner */}
-            <div className="flex items-start gap-3 p-4 bg-cyan/5 border border-cyan/20 rounded-2xl">
-                <CalendarOff className="w-5 h-5 text-cyan mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-3 p-4 bg-teal/5 border border-teal/20 rounded-2xl">
+                <CalendarOff className="w-5 h-5 text-teal mt-0.5 flex-shrink-0" />
                 <div>
-                    <p className="text-cyan font-semibold text-sm">¿Cómo funcionan los bloqueos?</p>
-                    <p className="text-blue-100/60 text-xs mt-0.5">
-                        <strong className="text-white">Clínica cerrada:</strong> Bloquea toda la agenda (feriados, vacaciones colectivas).{' '}
-                        <strong className="text-white">Profesional ausente:</strong> Solo bloquea la agenda de esa kinesióloga.{' '}
-                        <strong className="text-white">Recurso bloqueado:</strong> Impide agendar ese equipo (mantención).
+                    <p className="text-teal font-semibold text-sm">¿Cómo funcionan los bloqueos?</p>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                        <strong className="text-slate-800">Clínica cerrada:</strong> Bloquea toda la agenda (feriados, vacaciones colectivas).{' '}
+                        <strong className="text-slate-800">Profesional ausente:</strong> Solo bloquea la agenda de esa kinesióloga.{' '}
+                        <strong className="text-slate-800">Recurso bloqueado:</strong> Impide agendar ese equipo (mantención).
                     </p>
                 </div>
             </div>
 
             {loading && exceptions.length === 0 ? (
                 <div className="flex justify-center p-12">
-                    <Loader2 className="w-8 h-8 text-cyan animate-spin" />
+                    <Loader2 className="w-8 h-8 text-teal animate-spin" />
                 </div>
             ) : exceptions.length === 0 ? (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center text-blue-100/60">
+                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500">
                     No hay excepciones configuradas. Crea la primera para bloquear un feriado o una ausencia.
                 </div>
             ) : (
@@ -230,12 +230,12 @@ export default function ExceptionsPage() {
                     {/* Upcoming / Active */}
                     {upcoming.length > 0 && (
                         <div>
-                            <h2 className="text-sm font-semibold text-blue-100/50 uppercase tracking-wider mb-3">
+                            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
                                 Vigentes y Próximas ({upcoming.length})
                             </h2>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
+                            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden ">
                                 <table className="w-full text-left">
-                                    <thead className="bg-white/5 text-blue-100/60 uppercase text-xs tracking-wider">
+                                    <thead className="bg-white text-slate-500 uppercase text-xs tracking-wider">
                                         <tr>
                                             <th className="p-4 font-medium">Tipo</th>
                                             <th className="p-4 font-medium">Afecta a</th>
@@ -248,7 +248,7 @@ export default function ExceptionsPage() {
                                         {upcoming.map(exc => {
                                             const info = getExceptionTypeInfo(exc);
                                             return (
-                                                <tr key={exc.id} className="hover:bg-white/5 transition-colors">
+                                                <tr key={exc.id} className="hover:bg-white transition-colors">
                                                     <td className="p-4">
                                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${info.color}`}>
                                                             {info.icon}
@@ -268,13 +268,13 @@ export default function ExceptionsPage() {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 text-sm text-blue-100/50 max-w-[200px] truncate">
+                                                    <td className="p-4 text-sm text-slate-500 max-w-[200px] truncate">
                                                         {exc.reason || '—'}
                                                     </td>
                                                     <td className="p-4 text-right">
                                                         <button
                                                             onClick={() => handleDelete(exc.id)}
-                                                            className="p-2 text-red-400/70 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                                                            className="p-2 text-red-400/70 hover:text-red-400 hover:bg-white rounded-lg transition-colors"
                                                             title="Eliminar"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -292,12 +292,12 @@ export default function ExceptionsPage() {
                     {/* Past */}
                     {past.length > 0 && (
                         <div>
-                            <h2 className="text-sm font-semibold text-blue-100/30 uppercase tracking-wider mb-3">
+                            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
                                 Pasadas ({past.length})
                             </h2>
-                            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm opacity-60">
+                            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden  opacity-60">
                                 <table className="w-full text-left">
-                                    <thead className="bg-white/5 text-blue-100/40 uppercase text-xs tracking-wider">
+                                    <thead className="bg-white text-slate-400 uppercase text-xs tracking-wider">
                                         <tr>
                                             <th className="p-4 font-medium">Tipo</th>
                                             <th className="p-4 font-medium">Afecta a</th>
@@ -309,7 +309,7 @@ export default function ExceptionsPage() {
                                         {past.map(exc => {
                                             const info = getExceptionTypeInfo(exc);
                                             return (
-                                                <tr key={exc.id} className="hover:bg-white/5 transition-colors">
+                                                <tr key={exc.id} className="hover:bg-white transition-colors">
                                                     <td className="p-4">
                                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${info.color}`}>
                                                             {info.icon}
@@ -318,7 +318,7 @@ export default function ExceptionsPage() {
                                                     </td>
                                                     <td className="p-4 font-medium text-sm">{info.label}</td>
                                                     <td className="p-4 text-sm">{formatDateTime(exc.starts_at)} → {formatDateTime(exc.ends_at)}</td>
-                                                    <td className="p-4 text-sm text-blue-100/40">{exc.reason || '—'}</td>
+                                                    <td className="p-4 text-sm text-slate-400">{exc.reason || '—'}</td>
                                                 </tr>
                                             );
                                         })}
@@ -332,11 +332,11 @@ export default function ExceptionsPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-                    <div className="bg-[#0b1a2e] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                        <div className="flex justify-between items-center p-5 border-b border-white/5">
-                            <h2 className="text-xl font-bold text-white">Nuevo Bloqueo</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-1 text-white/50 hover:text-white rounded-lg transition-colors">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
+                    <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800">Nuevo Bloqueo</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -344,7 +344,7 @@ export default function ExceptionsPage() {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {/* Exception Type */}
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-2">Tipo de Bloqueo</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Tipo de Bloqueo</label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {([
                                         { value: 'clinic', label: 'Clínica', icon: Building2, desc: 'Cierre total' },
@@ -356,8 +356,8 @@ export default function ExceptionsPage() {
                                             type="button"
                                             onClick={() => setFormData({ ...formData, type: opt.value })}
                                             className={`p-3 rounded-xl border text-center transition-all ${formData.type === opt.value
-                                                ? 'border-cyan bg-cyan/10 text-white'
-                                                : 'border-white/10 bg-white/5 text-blue-100/60 hover:bg-white/10'
+                                                ? 'border-teal bg-teal/10 text-slate-800'
+                                                : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                                                 }`}
                                         >
                                             <opt.icon className="w-5 h-5 mx-auto mb-1" />
@@ -371,12 +371,12 @@ export default function ExceptionsPage() {
                             {/* Professional selector */}
                             {formData.type === 'professional' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-blue-100/80 mb-1">Profesional</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Profesional</label>
                                     <select
                                         required
                                         value={formData.professional_id}
                                         onChange={(e) => setFormData({ ...formData, professional_id: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[42px]"
+                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 h-[42px]"
                                     >
                                         {professionals.length === 0 ? (
                                             <option value="">No hay profesionales registrados</option>
@@ -390,12 +390,12 @@ export default function ExceptionsPage() {
                             {/* Resource selector */}
                             {formData.type === 'resource' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-blue-100/80 mb-1">Recurso Físico</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Recurso Físico</label>
                                     <select
                                         required
                                         value={formData.physical_resource_id}
                                         onChange={(e) => setFormData({ ...formData, physical_resource_id: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[42px]"
+                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 h-[42px]"
                                     >
                                         {resources.length === 0 ? (
                                             <option value="">No hay recursos registrados</option>
@@ -407,55 +407,55 @@ export default function ExceptionsPage() {
                             )}
 
                             {/* Start datetime */}
-                            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-3">
+                            <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-3">
                                 <p className="text-xs font-semibold text-green-400 uppercase tracking-wider">Inicio del bloqueo</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-blue-100/60 mb-1">Fecha</label>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Fecha</label>
                                         <input
                                             type="date"
                                             required
                                             value={formData.start_date}
                                             onChange={(e) => setFormData({ ...formData, start_date: e.target.value, end_date: formData.end_date || e.target.value })}
-                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-blue-100/60 mb-1">Hora</label>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Hora</label>
                                         <input
                                             type="time"
                                             required
                                             value={formData.start_time}
                                             onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
                                         />
                                     </div>
                                 </div>
                             </div>
 
                             {/* End datetime */}
-                            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-3">
+                            <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-3">
                                 <p className="text-xs font-semibold text-red-400 uppercase tracking-wider">Fin del bloqueo</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-blue-100/60 mb-1">Fecha</label>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Fecha</label>
                                         <input
                                             type="date"
                                             required
                                             value={formData.end_date}
                                             onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                                             min={formData.start_date}
-                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-blue-100/60 mb-1">Hora</label>
+                                        <label className="block text-xs font-medium text-slate-500 mb-1">Hora</label>
                                         <input
                                             type="time"
                                             required
                                             value={formData.end_time}
                                             onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
                                         />
                                     </div>
                                 </div>
@@ -463,12 +463,12 @@ export default function ExceptionsPage() {
 
                             {/* Reason */}
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Motivo (opcional)</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Motivo (opcional)</label>
                                 <input
                                     type="text"
                                     value={formData.reason}
                                     onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
                                     placeholder="Ej. Feriado Nacional, Licencia médica..."
                                 />
                             </div>
@@ -477,14 +477,14 @@ export default function ExceptionsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-sm font-medium text-blue-100/80 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {saving ? 'Guardando...' : 'Crear Bloqueo'}

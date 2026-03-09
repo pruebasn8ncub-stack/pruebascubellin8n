@@ -110,22 +110,22 @@ export default function SchedulesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-cyan to-blue-400">
+                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
                         Horarios Profesionales
                     </h1>
-                    <p className="text-blue-100/50 text-sm mt-1">Define los bloques de disponibilidad semanal de cada kinesióloga.</p>
+                    <p className="text-slate-500 text-sm mt-1">Define los bloques de disponibilidad semanal de cada kinesióloga.</p>
                 </div>
                 <div className="flex gap-4">
                     <button
                         onClick={fetchData}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                        className="p-2 bg-white hover:bg-slate-50 rounded-xl transition-all"
                         title="Actualizar"
                     >
-                        <RefreshCw className={`w-5 h-5 text-cyan ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-5 h-5 text-teal ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                         onClick={handleOpenModal}
-                        className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all"
+                        className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all"
                     >
                         <Plus className="w-5 h-5" />
                         Añadir Bloque
@@ -134,12 +134,12 @@ export default function SchedulesPage() {
             </div>
 
             {/* Capacity rule info banner */}
-            <div className="flex items-start gap-3 p-4 bg-cyan/5 border border-cyan/20 rounded-2xl">
-                <span className="text-cyan text-xl mt-0.5">⚡</span>
+            <div className="flex items-start gap-3 p-4 bg-teal/5 border border-teal/20 rounded-2xl">
+                <span className="text-teal text-xl mt-0.5">⚡</span>
                 <div>
-                    <p className="text-cyan font-semibold text-sm">Lógica de Capacidad Concurrente Activa</p>
-                    <p className="text-blue-100/60 text-xs mt-0.5">
-                        Una kinesióloga puede atender <strong className="text-white">2 cámaras hiperbáricas simultáneas</strong> (capacidad 0.5 c/u).
+                    <p className="text-teal font-semibold text-sm">Lógica de Capacidad Concurrente Activa</p>
+                    <p className="text-slate-500 text-xs mt-0.5">
+                        Una kinesióloga puede atender <strong className="text-slate-800">2 cámaras hiperbáricas simultáneas</strong> (capacidad 0.5 c/u).
                         Los servicios de Kinesiología estándar consumen su capacidad completa (1.0). Esta regla se aplica automáticamente al crear citas.
                     </p>
                 </div>
@@ -147,24 +147,24 @@ export default function SchedulesPage() {
 
             {loading && schedules.length === 0 ? (
                 <div className="flex justify-center p-12">
-                    <Loader2 className="w-8 h-8 text-cyan animate-spin" />
+                    <Loader2 className="w-8 h-8 text-teal animate-spin" />
                 </div>
             ) : schedules.length === 0 ? (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center text-blue-100/60">
+                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500">
                     No hay horarios configurados. Añade el primer bloque de disponibilidad.
                 </div>
             ) : (
                 Object.entries(schedulesByProfessional).map(([profName, profSchedules]) => (
-                    <div key={profName} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
-                        <div className="px-5 py-3 bg-white/5 border-b border-white/10 flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan to-blue-500 flex items-center justify-center text-white text-sm font-bold">
+                    <div key={profName} className="bg-white border border-slate-200 rounded-2xl overflow-hidden ">
+                        <div className="px-5 py-3 bg-white border-b border-slate-200 flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal to-blue-500 flex items-center justify-center text-white text-sm font-bold">
                                 {profName.charAt(0)}
                             </div>
-                            <span className="font-semibold text-white">{profName}</span>
-                            <span className="ml-auto text-xs text-blue-100/50">{profSchedules.length} bloque(s)</span>
+                            <span className="font-semibold text-slate-800">{profName}</span>
+                            <span className="ml-auto text-xs text-slate-500">{profSchedules.length} bloque(s)</span>
                         </div>
                         <table className="w-full text-left">
-                            <thead className="text-blue-100/50 uppercase text-xs tracking-wider">
+                            <thead className="text-slate-500 uppercase text-xs tracking-wider">
                                 <tr>
                                     <th className="px-5 py-3 font-medium">Día</th>
                                     <th className="px-5 py-3 font-medium">Hora Entrada</th>
@@ -183,17 +183,17 @@ export default function SchedulesPage() {
                                         const totalH = Math.floor(totalMin / 60);
                                         const remainMin = totalMin % 60;
                                         return (
-                                            <tr key={schedule.id} className="hover:bg-white/5 transition-colors">
-                                                <td className="px-5 py-3 font-semibold text-cyan">{DAYS[schedule.day_of_week]}</td>
+                                            <tr key={schedule.id} className="hover:bg-white transition-colors">
+                                                <td className="px-5 py-3 font-semibold text-teal">{DAYS[schedule.day_of_week]}</td>
                                                 <td className="px-5 py-3">{schedule.start_time.slice(0, 5)}</td>
                                                 <td className="px-5 py-3">{schedule.end_time.slice(0, 5)}</td>
-                                                <td className="px-5 py-3 text-blue-100/60 text-sm">
+                                                <td className="px-5 py-3 text-slate-500 text-sm">
                                                     {totalH > 0 ? `${totalH}h ` : ''}{remainMin > 0 ? `${remainMin}min` : ''}
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <button
                                                         onClick={() => handleDelete(schedule.id)}
-                                                        className="p-2 text-red-400/70 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                                                        className="p-2 text-red-400/70 hover:text-red-400 hover:bg-white rounded-lg transition-colors"
                                                         title="Eliminar bloque"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -210,23 +210,23 @@ export default function SchedulesPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-                    <div className="bg-[#0b1a2e] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                        <div className="flex justify-between items-center p-5 border-b border-white/5">
-                            <h2 className="text-xl font-bold text-white">Nuevo Bloque de Horario</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-1 text-white/50 hover:text-white rounded-lg transition-colors">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
+                    <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800">Nuevo Bloque de Horario</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Kinesióloga / Profesional</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Kinesióloga / Profesional</label>
                                 <select
                                     required
                                     value={formData.professional_id}
                                     onChange={(e) => setFormData({ ...formData, professional_id: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[42px]"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 h-[42px]"
                                 >
                                     {professionals.length === 0 ? (
                                         <option value="">No hay profesionales registrados (crea usuarios con rol professional)</option>
@@ -237,11 +237,11 @@ export default function SchedulesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Día de la Semana</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Día de la Semana</label>
                                 <select
                                     value={formData.day_of_week}
                                     onChange={(e) => setFormData({ ...formData, day_of_week: Number(e.target.value) })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[42px]"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 h-[42px]"
                                 >
                                     {DAYS.map((day, i) => (
                                         <option key={i} value={i}>{day}</option>
@@ -251,23 +251,23 @@ export default function SchedulesPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-blue-100/80 mb-1">Hora de Entrada</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Hora de Entrada</label>
                                     <input
                                         type="time"
                                         required
                                         value={formData.start_time}
                                         onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-blue-100/80 mb-1">Hora de Salida</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Hora de Salida</label>
                                     <input
                                         type="time"
                                         required
                                         value={formData.end_time}
                                         onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
                                     />
                                 </div>
                             </div>
@@ -276,14 +276,14 @@ export default function SchedulesPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-sm font-medium text-blue-100/80 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={saving || professionals.length === 0}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {saving ? 'Guardando...' : 'Guardar Bloque'}

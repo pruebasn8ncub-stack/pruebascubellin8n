@@ -106,20 +106,20 @@ export default function ResourcesPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-cyan to-blue-400">
+                <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
                     Recursos Físicos
                 </h1>
                 <div className="flex gap-4">
                     <button
                         onClick={fetchResources}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                        className="p-2 bg-white hover:bg-slate-50 rounded-xl transition-all"
                         title="Actualizar"
                     >
-                        <RefreshCw className={`w-5 h-5 text-cyan ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-5 h-5 text-teal ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                         onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all"
+                        className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all"
                     >
                         <Plus className="w-5 h-5" />
                         Nuevo Recurso
@@ -127,14 +127,14 @@ export default function ResourcesPage() {
                 </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden ">
                 {loading && resources.length === 0 ? (
                     <div className="flex justify-center p-12">
-                        <Loader2 className="w-8 h-8 text-cyan animate-spin" />
+                        <Loader2 className="w-8 h-8 text-teal animate-spin" />
                     </div>
                 ) : (
                     <table className="w-full text-left">
-                        <thead className="bg-white/5 text-blue-100/60 uppercase text-xs tracking-wider">
+                        <thead className="bg-white text-slate-500 uppercase text-xs tracking-wider">
                             <tr>
                                 <th className="p-4 font-medium">Nombre (ej. Box 1)</th>
                                 <th className="p-4 font-medium">Tipo (Box/Cámara)</th>
@@ -145,13 +145,13 @@ export default function ResourcesPage() {
                         <tbody className="divide-y divide-white/5">
                             {resources.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="p-8 text-center text-blue-100/60">
+                                    <td colSpan={4} className="p-8 text-center text-slate-500">
                                         No hay recursos registrados.
                                     </td>
                                 </tr>
                             ) : (
                                 resources.map(resource => (
-                                    <tr key={resource.id} className="hover:bg-white/5 transition-colors group">
+                                    <tr key={resource.id} className="hover:bg-white transition-colors group">
                                         <td className="p-4 font-medium">{resource.name}</td>
                                         <td className="p-4 capitalize">{resource.type === 'chamber' ? 'Cámara Hiperbárica' : 'Box Kinesiológico'}</td>
                                         <td className="p-4">
@@ -175,14 +175,14 @@ export default function ResourcesPage() {
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleOpenModal(resource)}
-                                                    className="p-2 text-blue-300 hover:text-cyan hover:bg-white/10 rounded-lg transition-colors"
+                                                    className="p-2 text-slate-500 hover:text-teal hover:bg-slate-50 rounded-lg transition-colors"
                                                     title="Editar"
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(resource.id)}
-                                                    className="p-2 text-red-300 hover:text-red-400 hover:bg-white/10 rounded-lg transition-colors"
+                                                    className="p-2 text-red-300 hover:text-red-400 hover:bg-slate-50 rounded-lg transition-colors"
                                                     title="Eliminar"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -199,44 +199,44 @@ export default function ResourcesPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-                    <div className="bg-[#0b1a2e] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                        <div className="flex justify-between items-center p-4 border-b border-white/5">
-                            <h2 className="text-xl font-bold text-white">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
+                    <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800">
                                 {editingResource ? 'Editar Recurso' : 'Nuevo Recurso Físico'}
                             </h2>
-                            <button onClick={handleCloseModal} className="p-1 text-white/50 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+                            <button onClick={handleCloseModal} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg hover:bg-white transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Nombre del Recurso</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre del Recurso</label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
                                     placeholder="Ej. Cámara A, Box 2"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Tipo de Instalación</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Tipo de Instalación</label>
                                 <select
                                     required
                                     value={formData.type}
                                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[42px]"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 h-[42px]"
                                 >
                                     <option value="chamber" className="text-black">Cámara Hiperbárica</option>
                                     <option value="box" className="text-black">Box Clínico</option>
                                 </select>
                             </div>
 
-                            <label className="flex items-center gap-3 p-4 bg-navy/30 border border-white/5 rounded-xl cursor-pointer hover:bg-navy/50 transition-colors">
+                            <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
                                 <div className="relative flex items-center">
                                     <input
                                         type="checkbox"
@@ -244,11 +244,11 @@ export default function ResourcesPage() {
                                         checked={formData.is_active}
                                         onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                                     />
-                                    <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan"></div>
+                                    <div className="w-11 h-6 bg-slate-50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal"></div>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-white">Recurso Operativo</p>
-                                    <p className="text-xs text-blue-100/60">Apágalo si requiere mantenimiento.</p>
+                                    <p className="text-sm font-medium text-slate-800">Recurso Operativo</p>
+                                    <p className="text-xs text-slate-500">Apágalo si requiere mantenimiento.</p>
                                 </div>
                             </label>
 
@@ -256,14 +256,14 @@ export default function ResourcesPage() {
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
-                                    className="px-4 py-2 text-sm font-medium text-blue-100/80 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded-xl transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {saving ? 'Guardando...' : 'Guardar Recurso'}

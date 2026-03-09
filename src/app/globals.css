@@ -8,6 +8,13 @@
   --cyan-light: #f0f5fa;
 
   --navy: #0d3d72;
+  --navy-light: #164b85;
+  --navy-dark: #092d55;
+
+  --teal: #00b4a6;
+  --teal-dark: #009688;
+  --teal-light: #e0f7f5;
+  --teal-glow: rgba(0, 180, 166, 0.25);
   --bg-main: #f5f8fc;
   --surface: #ffffff;
 

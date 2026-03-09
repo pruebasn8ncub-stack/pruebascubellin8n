@@ -256,20 +256,20 @@ export default function ServicesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-cyan to-blue-400">
+                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
                         Servicios
                     </h1>
-                    <p className="text-blue-100/50 text-sm mt-1">
+                    <p className="text-slate-500 text-sm mt-1">
                         Crea servicios simples y combínalos en servicios compuestos.
                     </p>
                 </div>
                 <div className="flex gap-4">
-                    <button onClick={fetchServices} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all" title="Actualizar">
-                        <RefreshCw className={`w-5 h-5 text-cyan ${loading ? 'animate-spin' : ''}`} />
+                    <button onClick={fetchServices} className="p-2 bg-white hover:bg-slate-50 rounded-xl transition-all" title="Actualizar">
+                        <RefreshCw className={`w-5 h-5 text-teal ${loading ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                         onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all"
+                        className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-4 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all"
                     >
                         <Plus className="w-5 h-5" />
                         Nuevo Servicio
@@ -277,16 +277,16 @@ export default function ServicesPage() {
                 </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden ">
                 {loading && services.length === 0 ? (
                     <div className="flex justify-center p-12">
-                        <Loader2 className="w-8 h-8 text-cyan animate-spin" />
+                        <Loader2 className="w-8 h-8 text-teal animate-spin" />
                     </div>
                 ) : services.length === 0 ? (
-                    <div className="p-12 text-center text-blue-100/60">No hay servicios registrados.</div>
+                    <div className="p-12 text-center text-slate-500">No hay servicios registrados.</div>
                 ) : (
                     <table className="w-full text-left">
-                        <thead className="bg-white/5 text-blue-100/60 uppercase text-xs tracking-wider">
+                        <thead className="bg-white text-slate-500 uppercase text-xs tracking-wider">
                             <tr>
                                 <th className="p-4 font-medium w-8"></th>
                                 <th className="p-4 font-medium">Nombre</th>
@@ -303,12 +303,12 @@ export default function ServicesPage() {
                                 const phaseCount = service.phases?.length || 0;
                                 return (
                                     <>
-                                        <tr key={service.id} className="hover:bg-white/5 transition-colors">
+                                        <tr key={service.id} className="hover:bg-white transition-colors">
                                             <td className="p-4">
                                                 {service.is_composite && phaseCount > 0 && (
                                                     <button
                                                         onClick={() => setExpandedServiceId(isExpanded ? null : service.id)}
-                                                        className="p-1 text-blue-100/40 hover:text-cyan transition-colors"
+                                                        className="p-1 text-slate-400 hover:text-teal transition-colors"
                                                     >
                                                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                     </button>
@@ -317,7 +317,7 @@ export default function ServicesPage() {
                                             <td className="p-4">
                                                 <span className="font-medium">{service.name}</span>
                                                 {service.description && (
-                                                    <p className="text-xs text-blue-100/40 mt-0.5 line-clamp-1">{service.description}</p>
+                                                    <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{service.description}</p>
                                                 )}
                                             </td>
                                             <td className="p-4 text-center">
@@ -327,7 +327,7 @@ export default function ServicesPage() {
                                                         Compuesto ({phaseCount})
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-cyan/10 text-cyan border border-cyan/20">
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-teal/10 text-teal border border-teal/20">
                                                         <Package className="w-3 h-3" />
                                                         Simple
                                                     </span>
@@ -336,11 +336,11 @@ export default function ServicesPage() {
                                             <td className="p-4 text-center font-mono text-sm">{service.duration_minutes} min</td>
                                             <td className="p-4 text-center text-xs">
                                                 {service.is_composite ? (
-                                                    <span className="text-blue-100/40">Ver fases ↓</span>
+                                                    <span className="text-slate-400">Ver fases ↓</span>
                                                 ) : (
                                                     <div className="space-y-0.5">
                                                         {service.required_resource_type && (
-                                                            <span className="px-2 py-0.5 bg-blue-500/10 text-blue-300 rounded text-xs block w-fit mx-auto">
+                                                            <span className="px-2 py-0.5 bg-teal/10 text-slate-500 rounded text-xs block w-fit mx-auto">
                                                                 {getResourceLabel(service.required_resource_type)}
                                                             </span>
                                                         )}
@@ -360,10 +360,10 @@ export default function ServicesPage() {
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button onClick={() => handleOpenModal(service)} className="p-2 text-blue-300 hover:text-cyan hover:bg-white/10 rounded-lg transition-colors" title="Editar">
+                                                    <button onClick={() => handleOpenModal(service)} className="p-2 text-slate-500 hover:text-teal hover:bg-slate-50 rounded-lg transition-colors" title="Editar">
                                                         <Edit className="w-4 h-4" />
                                                     </button>
-                                                    <button onClick={() => handleDelete(service.id)} className="p-2 text-red-300 hover:text-red-400 hover:bg-white/10 rounded-lg transition-colors" title="Eliminar">
+                                                    <button onClick={() => handleDelete(service.id)} className="p-2 text-red-300 hover:text-red-400 hover:bg-slate-50 rounded-lg transition-colors" title="Eliminar">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -373,24 +373,24 @@ export default function ServicesPage() {
                                         {isExpanded && service.phases && service.phases.length > 0 && (
                                             <tr key={`${service.id}-phases`}>
                                                 <td colSpan={7} className="px-4 pb-4">
-                                                    <div className="ml-8 bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                                                        <div className="p-3 bg-white/5 border-b border-white/5">
-                                                            <span className="text-[10px] text-blue-100/40 uppercase tracking-wider font-semibold">Composición del servicio</span>
+                                                    <div className="ml-8 bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                                        <div className="p-3 bg-white border-b border-slate-100">
+                                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Composición del servicio</span>
                                                         </div>
                                                         {service.phases.map((phase, i) => (
-                                                            <div key={phase.id || i} className="flex items-center gap-4 p-3 border-b border-white/5 last:border-0">
+                                                            <div key={phase.id || i} className="flex items-center gap-4 p-3 border-b border-slate-100 last:border-0">
                                                                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex-shrink-0">
                                                                     {phase.phase_order}
                                                                 </span>
                                                                 <div className="flex-1">
                                                                     <span className="text-sm font-medium">{phase.label || `Fase ${phase.phase_order}`}</span>
                                                                 </div>
-                                                                <span className="text-xs font-mono text-blue-100/60">{phase.duration_minutes} min</span>
+                                                                <span className="text-xs font-mono text-slate-500">{phase.duration_minutes} min</span>
                                                                 <span className={`text-xs ${phase.requires_professional_fraction < 1 ? 'text-amber-400' : 'text-green-400'}`}>
                                                                     {phase.requires_professional_fraction} prof.
                                                                 </span>
                                                                 {phase.requires_resource_type && (
-                                                                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-300 rounded text-xs">
+                                                                    <span className="px-2 py-0.5 bg-teal/10 text-slate-500 rounded text-xs">
                                                                         {getResourceLabel(phase.requires_resource_type)}
                                                                     </span>
                                                                 )}
@@ -410,13 +410,13 @@ export default function ServicesPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/80 backdrop-blur-sm">
-                    <div className="bg-[#0b1a2e] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-                        <div className="flex justify-between items-center p-5 border-b border-white/5">
-                            <h2 className="text-xl font-bold text-white">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
+                    <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                            <h2 className="text-xl font-bold text-slate-800">
                                 {editingService ? 'Editar Servicio' : 'Nuevo Servicio'}
                             </h2>
-                            <button onClick={handleCloseModal} className="p-1 text-white/50 hover:text-white rounded-lg transition-colors">
+                            <button onClick={handleCloseModal} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -424,40 +424,40 @@ export default function ServicesPage() {
                         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1">Nombre del Servicio</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre del Servicio</label>
                                 <input
                                     type="text"
                                     required
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
                                     placeholder="Ej. Masaje, Recovery, etc."
                                 />
                             </div>
 
                             {/* Description */}
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-1 flex items-center gap-1.5">
+                                <label className="block text-sm font-medium text-slate-600 mb-1 flex items-center gap-1.5">
                                     Descripción para Agente IA
-                                    <span className="text-xs bg-cyan/10 text-cyan border border-cyan/20 px-1.5 py-0.5 rounded-md font-normal">🤖 IA</span>
+                                    <span className="text-xs bg-teal/10 text-teal border border-teal/20 px-1.5 py-0.5 rounded-md font-normal">🤖 IA</span>
                                 </label>
                                 <textarea
                                     rows={2}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50 resize-none"
+                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50 resize-none"
                                     placeholder="Describe el servicio para el asistente IA."
                                 />
                             </div>
 
                             {/* Type toggle: Simple vs Composite */}
                             <div>
-                                <label className="block text-sm font-medium text-blue-100/80 mb-2">Tipo de Servicio</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Tipo de Servicio</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => { setFormData({ ...formData, is_composite: false }); setCompositePhases([]); }}
-                                        className={`p-3 rounded-xl border text-center transition-all ${!formData.is_composite ? 'border-cyan bg-cyan/10 text-white' : 'border-white/10 bg-white/5 text-blue-100/60 hover:bg-white/10'}`}
+                                        className={`p-3 rounded-xl border text-center transition-all ${!formData.is_composite ? 'border-teal bg-teal/10 text-slate-800' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
                                     >
                                         <Package className="w-5 h-5 mx-auto mb-1" />
                                         <span className="text-xs font-medium block">Simple</span>
@@ -471,7 +471,7 @@ export default function ServicesPage() {
                                                 setCompositePhases([{ sub_service_id: simpleServices[0].id, duration_minutes: simpleServices[0].duration_minutes }]);
                                             }
                                         }}
-                                        className={`p-3 rounded-xl border text-center transition-all ${formData.is_composite ? 'border-purple-500 bg-purple-500/10 text-white' : 'border-white/10 bg-white/5 text-blue-100/60 hover:bg-white/10'}`}
+                                        className={`p-3 rounded-xl border text-center transition-all ${formData.is_composite ? 'border-purple-500 bg-purple-500/10 text-slate-800' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}
                                     >
                                         <Layers className="w-5 h-5 mx-auto mb-1" />
                                         <span className="text-xs font-medium block">Compuesto</span>
@@ -482,11 +482,11 @@ export default function ServicesPage() {
 
                             {/* === SIMPLE SERVICE FIELDS === */}
                             {!formData.is_composite && (
-                                <div className="space-y-4 p-4 bg-white/5 rounded-xl border border-white/10">
-                                    <p className="text-xs font-semibold text-cyan uppercase tracking-wider">Configuración del servicio</p>
+                                <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200">
+                                    <p className="text-xs font-semibold text-teal uppercase tracking-wider">Configuración del servicio</p>
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
-                                            <label className="block text-[10px] font-medium text-blue-100/50 mb-1 uppercase tracking-wider">Duración (min)</label>
+                                            <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider">Duración (min)</label>
                                             <input
                                                 type="number"
                                                 required
@@ -494,15 +494,15 @@ export default function ServicesPage() {
                                                 step="5"
                                                 value={formData.duration_minutes}
                                                 onChange={(e) => setFormData({ ...formData, duration_minutes: Number(e.target.value) })}
-                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50"
+                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-medium text-blue-100/50 mb-1 uppercase tracking-wider">Profesional</label>
+                                            <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider">Profesional</label>
                                             <select
                                                 value={formData.required_professionals}
                                                 onChange={(e) => setFormData({ ...formData, required_professionals: Number(e.target.value) })}
-                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[34px]"
+                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50 h-[34px]"
                                             >
                                                 <option value={1}>1 completo</option>
                                                 <option value={0.5}>0.5 (compartido)</option>
@@ -511,11 +511,11 @@ export default function ServicesPage() {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-medium text-blue-100/50 mb-1 uppercase tracking-wider">Recurso</label>
+                                            <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider">Recurso</label>
                                             <select
                                                 value={formData.required_resource_type || ''}
                                                 onChange={(e) => setFormData({ ...formData, required_resource_type: e.target.value || null })}
-                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-cyan/50 h-[34px]"
+                                                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50 h-[34px]"
                                             >
                                                 <option value="">Ninguno</option>
                                                 <option value="box">Box</option>
@@ -531,8 +531,8 @@ export default function ServicesPage() {
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-white">Servicios que lo componen</p>
-                                            <p className="text-xs text-blue-100/40">
+                                            <p className="text-sm font-medium text-slate-800">Servicios que lo componen</p>
+                                            <p className="text-xs text-slate-400">
                                                 Duración total: <span className="text-purple-400 font-semibold">{compositeTotalDuration} min</span>
                                             </p>
                                         </div>
@@ -549,7 +549,7 @@ export default function ServicesPage() {
                                     {simpleServices.length === 0 ? (
                                         <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center">
                                             <p className="text-amber-400 text-sm font-medium">No hay servicios simples disponibles</p>
-                                            <p className="text-xs text-blue-100/40 mt-1">Primero crea servicios simples (como "Masaje", "Cámara") para poder combinarlos.</p>
+                                            <p className="text-xs text-slate-400 mt-1">Primero crea servicios simples (como "Masaje", "Cámara") para poder combinarlos.</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
@@ -558,7 +558,7 @@ export default function ServicesPage() {
                                                 const defaultDuration = selectedService?.duration_minutes || 30;
                                                 const isCustomDuration = phase.duration_minutes !== defaultDuration;
                                                 return (
-                                                    <div key={index} className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
+                                                    <div key={index} className="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
                                                         <div className="flex items-center gap-3">
                                                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold flex-shrink-0">
                                                                 {index + 1}
@@ -584,7 +584,7 @@ export default function ServicesPage() {
                                                         </div>
                                                         <div className="flex items-center gap-3 ml-9">
                                                             <div className="flex items-center gap-1.5">
-                                                                <label className="text-[10px] text-blue-100/50 uppercase tracking-wider whitespace-nowrap">Duración:</label>
+                                                                <label className="text-[10px] text-slate-500 uppercase tracking-wider whitespace-nowrap">Duración:</label>
                                                                 <input
                                                                     type="number"
                                                                     min="5"
@@ -593,7 +593,7 @@ export default function ServicesPage() {
                                                                     onChange={(e) => updatePhaseDuration(index, Number(e.target.value))}
                                                                     className="w-16 bg-white border border-gray-300 rounded-lg px-2 py-1 text-black text-xs text-center focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                                                                 />
-                                                                <span className="text-[10px] text-blue-100/40">min</span>
+                                                                <span className="text-[10px] text-slate-400">min</span>
                                                                 {isCustomDuration && (
                                                                     <span className="text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                                                                         personalizado (original: {defaultDuration}m)
@@ -601,9 +601,9 @@ export default function ServicesPage() {
                                                                 )}
                                                             </div>
                                                             {selectedService && (
-                                                                <div className="flex items-center gap-2 text-[10px] text-blue-100/50 ml-auto">
+                                                                <div className="flex items-center gap-2 text-[10px] text-slate-500 ml-auto">
                                                                     {selectedService.required_resource_type && (
-                                                                        <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-300 rounded">
+                                                                        <span className="px-1.5 py-0.5 bg-teal/10 text-slate-500 rounded">
                                                                             {getResourceLabel(selectedService.required_resource_type)}
                                                                         </span>
                                                                     )}
@@ -622,10 +622,10 @@ export default function ServicesPage() {
                             )}
 
                             {/* Active toggle */}
-                            <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200">
                                 <div>
-                                    <span className="font-medium text-white text-sm">Estado</span>
-                                    <p className="text-xs text-blue-100/50">Disponible para agendar</p>
+                                    <span className="font-medium text-slate-800 text-sm">Estado</span>
+                                    <p className="text-xs text-slate-500">Disponible para agendar</p>
                                 </div>
                                 <button
                                     type="button"
@@ -637,13 +637,13 @@ export default function ServicesPage() {
                             </div>
 
                             <div className="pt-2 flex justify-end gap-3">
-                                <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-blue-100/80 hover:text-white hover:bg-white/5 rounded-xl transition-colors">
+                                <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded-xl transition-colors">
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-cyan to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-cyan/25 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {saving ? 'Guardando...' : 'Guardar Servicio'}

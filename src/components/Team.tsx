@@ -18,15 +18,15 @@ export function Team() {
         {
             name: "Daniela Mayoral Vega",
             role: "Kinesióloga · Directora Clínica",
-            bio: "Kinesióloga con trayectoria en medicina hiperbárica y rehabilitación funcional. Especialista en el uso terapéutico del oxígeno hiperbárico para acelerar la regeneración de tejidos y tratar condiciones crónicas complejas.",
-            badges: ["Directora Clínica", "U. de Chile"],
-            imgUrl: "/images/Kinesiologas_innovakine2.jpeg",
+            bio: "Kinesióloga con trayectoria en medicina hiperbárica y rehabilitación funcional. Diplomada en Salud Familiar y Comunitaria (230 hrs, U. Gabriela Mistral), Neurorehabilitación (200 hrs, OCEUP Educación Continua) y Manejo del Dolor (80 hrs, Instituto Revive). Especialista en oxígeno hiperbárico para regeneración de tejidos y condiciones crónicas complejas.",
+            badges: ["Kinesióloga", "U. Playa Ancha"],
+            imgUrl: "/images/daniela_mayoral.jpg",
             linkedinUrl: "#"
         },
         {
             name: "Camila Alvarado Barrera",
             role: "Kinesióloga · Co-Fundadora de Innovakine",
-            bio: "Profesional orientada a la recuperación integral de sus pacientes. Especializada en Fisiología Clínica del Ejercicio, destaca por su empatía y sólida experiencia en rehabilitación y trabajo interdisciplinario.",
+            bio: "Profesional orientada a la recuperación integral de sus pacientes. Especializada en Fisiología Clínica del Ejercicio, con amplia experiencia en tratamiento hiperbárico. Destaca por su empatía y sólida experiencia en rehabilitación y trabajo interdisciplinario.",
             badges: ["Diplomada UChile", "Kinesiología"],
             imgUrl: "/images/camila_alvarado.jpg",
             linkedinUrl: "https://www.linkedin.com/in/camila-alvarado-barrera-786164248/"
@@ -81,7 +81,9 @@ export function Team() {
                                 {/* Badges */}
                                 <div className="relative z-10 flex flex-wrap justify-center gap-2.5 mb-8">
                                     {member.badges.map((badge, bIdx) => {
-                                        const isUChile = badge.toLowerCase().includes('uchile') || badge.toLowerCase().includes('u. de chile');
+                                        const badgeLower = badge.toLowerCase();
+                                        const isUChile = badgeLower.includes('uchile') || badgeLower.includes('u. de chile');
+                                        const isUPLA = badgeLower.includes('playa ancha');
                                         return (
                                             <span
                                                 key={bIdx}
@@ -89,6 +91,9 @@ export function Team() {
                                             >
                                                 {isUChile && (
                                                     <Image src="/images/logo_uchile.png" alt="Universidad de Chile" width={16} height={16} className="object-contain" />
+                                                )}
+                                                {isUPLA && (
+                                                    <Image src="/images/logo_upla.png" alt="Universidad de Playa Ancha" width={16} height={16} className="object-contain" />
                                                 )}
                                                 {badge}
                                             </span>
