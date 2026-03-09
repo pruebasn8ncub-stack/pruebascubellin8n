@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Puck, Data } from "@measured/puck";
 import "@measured/puck/puck.css";
 import { puckConfig } from "@/puck/config";
@@ -24,34 +25,23 @@ const defaultData: Data = {
 };
 
 export default function EditorPage() {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [pageData, setPageData] = useState<Data>(defaultData);
   const [saveStatus, setSaveStatus] = useState<string>("");
 
-  // Check admin auth on mount
+  // Check auth on mount — same pattern as admin layout
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setIsAdmin(false);
-          return;
-        }
-
-        // Check admin role in profiles table
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        setIsAdmin(profile?.role === "admin");
-      } catch {
-        setIsAdmin(false);
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push("/");
+      } else {
+        setLoading(false);
       }
-    }
-    checkAuth();
-  }, []);
+    };
+    checkUser();
+  }, [router]);
 
   // Load saved page data
   useEffect(() => {
@@ -68,8 +58,8 @@ export default function EditorPage() {
         console.log("No saved page data found, using defaults");
       }
     }
-    if (isAdmin) loadPageData();
-  }, [isAdmin]);
+    if (!loading) loadPageData();
+  }, [loading]);
 
   // Save handler
   const handleSave = useCallback(async (data: Data) => {
@@ -82,47 +72,25 @@ export default function EditorPage() {
       });
 
       if (res.ok) {
-        setSaveStatus("✅ ¡Guardado exitosamente!");
+        setSaveStatus("\u2705 \u00a1Guardado exitosamente!");
       } else {
         const err = await res.json();
-        setSaveStatus(`❌ Error: ${err.error || "No se pudo guardar"}`);
+        setSaveStatus(`\u274c Error: ${err.error || "No se pudo guardar"}`);
       }
     } catch {
-      setSaveStatus("❌ Error de conexión");
+      setSaveStatus("\u274c Error de conexi\u00f3n");
     }
 
     setTimeout(() => setSaveStatus(""), 3000);
   }, []);
 
   // Loading state
-  if (isAdmin === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Verificando acceso...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Unauthorized
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md">
-          <div className="text-6xl mb-4">🔒</div>
-          <h1 className="text-2xl font-black text-gray-800 mb-2">Acceso Restringido</h1>
-          <p className="text-gray-600 mb-6">
-            Solo los administradores pueden acceder al editor visual.
-            Inicia sesión con tu cuenta de administrador.
-          </p>
-          <a
-            href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-500 text-white font-bold rounded-full hover:bg-cyan-600 transition"
-          >
-            ← Volver al sitio
-          </a>
+          <p className="text-gray-600 font-medium">Cargando editor...</p>
         </div>
       </div>
     );
@@ -140,7 +108,7 @@ export default function EditorPage() {
         config={puckConfig}
         data={pageData}
         onPublish={handleSave}
-        headerTitle="InnovaKine — Editor Visual"
+        headerTitle="InnovaKine \u2014 Editor Visual"
       />
     </div>
   );
