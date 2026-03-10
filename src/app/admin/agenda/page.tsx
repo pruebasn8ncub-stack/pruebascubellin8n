@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
     Loader2, Calendar as CalendarIcon, Clock, User, ChevronLeft, ChevronRight,
     Filter, UserCircle, AlertTriangle, ArrowLeft, List, LayoutGrid, CalendarDays,
-    Activity, ClipboardList, Phone, Mail
+    Activity, ClipboardList, Phone, Mail, Plus, X, Save
 } from "lucide-react";
 import {
     format, addDays, subDays, addMonths, subMonths,
@@ -49,6 +49,10 @@ interface Appointment {
 
 type ViewMode = "month" | "day";
 type StatusFilter = "all" | "scheduled" | "overdue" | "completed" | "cancelled" | "no_show";
+
+interface Patient { id: string; full_name: string; email: string; phone: string }
+interface Service { id: string; name: string; duration_minutes: number; color: string; is_composite: boolean }
+interface Professional { id: string; full_name: string }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -169,6 +173,7 @@ export default function AgendaPage() {
     const [viewMode, setViewMode] = useState<ViewMode>("month");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
     // Always fetch full month range so monthly view has all data
     const dateRange = useMemo(() => {
@@ -313,8 +318,15 @@ export default function AgendaPage() {
                     )}
                 </div>
 
-                {/* Filter */}
+                {/* Filter & Actions */}
                 <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        onClick={() => setIsFormModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal to-blue-500 text-white rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all font-semibold text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Nueva Cita</span>
+                    </button>
                     <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1 px-3 border border-slate-200">
                         <Filter className="w-4 h-4 text-slate-400" />
                         <select
@@ -369,6 +381,16 @@ export default function AgendaPage() {
                 <AppointmentDetail
                     appointment={selectedAppointment}
                     onClose={() => setSelectedAppointment(null)}
+                />
+            )}
+
+            {isFormModalOpen && (
+                <AppointmentFormModal
+                    onClose={() => setIsFormModalOpen(false)}
+                    onSuccess={() => {
+                        setIsFormModalOpen(false);
+                        fetchAppointments(dateRange.start, dateRange.end);
+                    }}
                 />
             )}
         </div>
@@ -846,3 +868,235 @@ function DetailCard({ icon, title, value, textColor = "text-slate-800" }: { icon
         </div>
     );
 }
+
+// ─── Manual Appointment Form Modal ──────────────────────────────────────────
+
+function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+    const [loadingData, setLoadingData] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+    const [professionals, setProfessionals] = useState<Professional[]>([]);
+
+    const [form, setForm] = useState({
+        patient_id: "",
+        service_id: "",
+        professional_id: "",
+        date: format(new Date(), "yyyy-MM-dd"),
+        time: "09:00",
+        notes: ""
+    });
+
+    useEffect(() => {
+        async function fetchData() {
+            setLoadingData(true);
+            try {
+                const [ptsRes, srvRes, profRes] = await Promise.all([
+                    supabase.from('patients').select('id, full_name, email, phone').order('full_name'),
+                    supabase.from('services').select('id, name, duration_minutes, color, is_composite').order('name'),
+                    // Assuming role 'professional' or we just fetch all profiles for now as per plan
+                    supabase.from('profiles').select('id, full_name').order('full_name') // You might want to filter this by role later
+                ]);
+
+                if (ptsRes.error) throw new Error("Error cargando pacientes: " + ptsRes.error.message);
+                if (srvRes.error) throw new Error("Error cargando servicios: " + srvRes.error.message);
+                if (profRes.error) throw new Error("Error cargando profesionales: " + profRes.error.message);
+
+                setPatients(ptsRes.data || []);
+                setServices(srvRes.data || []);
+                setProfessionals(profRes.data || []);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoadingData(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setSaving(true);
+
+        try {
+            const selectedService = services.find(s => s.id === form.service_id);
+            if (!selectedService) throw new Error("Debes seleccionar un servicio válido.");
+            if (!form.patient_id) throw new Error("Debes seleccionar un paciente.");
+            if (!form.professional_id) throw new Error("Debes seleccionar un profesional.");
+
+            // Calculate start and end times
+            const startDateTime = new Date(`${form.date}T${form.time}:00`);
+            const endDateTime = new Date(startDateTime.getTime() + selectedService.duration_minutes * 60000);
+
+            if (isNaN(startDateTime.getTime())) throw new Error("Fecha u hora inválida.");
+
+            // 1. Insert Appointment
+            const { data: aptData, error: aptError } = await supabase
+                .from('appointments')
+                .insert({
+                    patient_id: form.patient_id,
+                    service_id: form.service_id,
+                    starts_at: startDateTime.toISOString(),
+                    ends_at: endDateTime.toISOString(),
+                    status: "scheduled",
+                    notes: form.notes || null,
+                })
+                .select('id')
+                .single();
+
+            if (aptError) throw new Error("Error creando cita: " + aptError.message);
+            const appointmentId = aptData.id;
+
+            // 2. Insert Allocation (single block for the professional)
+            const { error: allocError } = await supabase
+                .from('appointment_allocations')
+                .insert({
+                    appointment_id: appointmentId,
+                    professional_id: form.professional_id,
+                    starts_at: startDateTime.toISOString(),
+                    ends_at: endDateTime.toISOString(),
+                });
+
+            if (allocError) {
+                // Try to rollback the appointment
+                await supabase.from('appointments').delete().eq('id', appointmentId);
+                throw new Error("Error asignando profesional: " + allocError.message);
+            }
+
+            onSuccess();
+        } catch (err: any) {
+            setError(err.message);
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4">
+            <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                    <h2 className="text-xl font-bold text-slate-800">Agendar Cita Manual</h2>
+                    <button onClick={onClose} disabled={saving} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                    {loadingData ? (
+                        <div className="flex flex-col items-center justify-center py-10">
+                            <Loader2 className="h-8 w-8 text-teal animate-spin mb-4" />
+                            <p className="text-slate-500 font-medium">Cargando datos...</p>
+                        </div>
+                    ) : (
+                        <form id="new-appointment-form" onSubmit={handleSubmit} className="space-y-4">
+                            {error && (
+                                <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium">
+                                    {error}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Paciente <span className="text-red-500">*</span></label>
+                                <select
+                                    required
+                                    value={form.patient_id}
+                                    onChange={e => setForm({ ...form, patient_id: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                >
+                                    <option value="">-- Seleccionar Paciente --</option>
+                                    {patients.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Servicio principal <span className="text-red-500">*</span></label>
+                                <select
+                                    required
+                                    value={form.service_id}
+                                    onChange={e => setForm({ ...form, service_id: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                >
+                                    <option value="">-- Seleccionar Servicio --</option>
+                                    {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes} min)</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Profesional asignado <span className="text-red-500">*</span></label>
+                                <select
+                                    required
+                                    value={form.professional_id}
+                                    onChange={e => setForm({ ...form, professional_id: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                >
+                                    <option value="">-- Seleccionar Profesional --</option>
+                                    {professionals.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Fecha <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={form.date}
+                                        onChange={e => setForm({ ...form, date: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Hora de inicio <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={form.time}
+                                        onChange={e => setForm({ ...form, time: e.target.value })}
+                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Notas (Opcional)</label>
+                                <textarea
+                                    rows={3}
+                                    value={form.notes}
+                                    onChange={e => setForm({ ...form, notes: e.target.value })}
+                                    placeholder="Detalles adicionales sobre la cita..."
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all resize-none"
+                                />
+                            </div>
+                        </form>
+                    )}
+                </div>
+
+                <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 rounded-b-3xl">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                        className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        form="new-appointment-form"
+                        disabled={saving || loadingData}
+                        className="px-6 py-2.5 text-sm font-bold text-white bg-teal focus:ring-2 focus:ring-teal/20 focus:border-teal rounded-xl shadow-md hover:shadow-lg hover:bg-teal-dark transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {saving ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                        ) : (
+                            <><Save className="w-4 h-4" /> Crear Cita</>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
