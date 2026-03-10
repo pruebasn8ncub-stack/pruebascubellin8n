@@ -71,15 +71,12 @@ export default function AdminLayout({
                                     className={cn(
                                         "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm",
                                         isActive
-                                            ? "text-white shadow-lg"
-                                            : "text-white/80 hover:text-white hover:shadow-md"
+                                            ? "text-white shadow-lg bg-gradient-to-r from-teal to-blue-500"
+                                            : "text-slate-600 hover:text-teal hover:bg-slate-100"
                                     )}
                                     style={isActive ? {
-                                        background: "linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%)",
                                         boxShadow: "0 4px 15px var(--teal-glow)",
-                                    } : {
-                                        background: "linear-gradient(135deg, #0d3d72 0%, #092d55 100%)",
-                                    }}
+                                    } : {}}
                                 >
                                     <item.icon className="w-5 h-5" />
                                     {item.name}

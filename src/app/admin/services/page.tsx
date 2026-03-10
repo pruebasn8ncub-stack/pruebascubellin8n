@@ -24,6 +24,7 @@ interface Service {
     required_resource_type: string | null;
     required_professionals: number;
     created_at: string;
+    color: string | null;
     phases?: Phase[];
 }
 
@@ -42,6 +43,7 @@ export default function ServicesPage() {
         description: '',
         is_active: true,
         is_composite: false,
+        color: null as string | null,
         // Simple service fields
         duration_minutes: 30,
         required_resource_type: '' as string | null,
@@ -90,6 +92,7 @@ export default function ServicesPage() {
                 description: service.description || '',
                 is_active: service.is_active,
                 is_composite: service.is_composite,
+                color: service.color || null,
                 duration_minutes: service.duration_minutes,
                 required_resource_type: service.required_resource_type ?? '',
                 required_professionals: service.required_professionals,
@@ -105,7 +108,7 @@ export default function ServicesPage() {
         } else {
             setEditingService(null);
             setFormData({
-                name: '', description: '', is_active: true, is_composite: false,
+                name: '', description: '', is_active: true, is_composite: false, color: null,
                 duration_minutes: 30, required_resource_type: '', required_professionals: 1,
             });
             setCompositePhases([]);
@@ -177,6 +180,7 @@ export default function ServicesPage() {
                 description: formData.description.trim() || null,
                 is_active: formData.is_active,
                 is_composite: true,
+                color: formData.color || null,
                 duration_minutes: compositeTotalDuration,
                 required_resource_type: null,
                 required_professionals: Math.max(...compositePhases.map(p => getServiceById(p.sub_service_id)?.required_professionals || 1)),
@@ -219,6 +223,7 @@ export default function ServicesPage() {
                 description: formData.description.trim() || null,
                 is_active: formData.is_active,
                 is_composite: false,
+                color: formData.color || null,
                 duration_minutes: formData.duration_minutes,
                 required_resource_type: formData.required_resource_type || null,
                 required_professionals: formData.required_professionals,
@@ -291,6 +296,7 @@ export default function ServicesPage() {
                                 <th className="p-4 font-medium w-8"></th>
                                 <th className="p-4 font-medium">Nombre</th>
                                 <th className="p-4 font-medium text-center">Tipo</th>
+                                <th className="p-4 font-medium text-center">Color</th>
                                 <th className="p-4 font-medium text-center">Duración</th>
                                 <th className="p-4 font-medium text-center">Recurso / Prof.</th>
                                 <th className="p-4 font-medium text-center">Activo</th>
@@ -331,6 +337,15 @@ export default function ServicesPage() {
                                                         <Package className="w-3 h-3" />
                                                         Simple
                                                     </span>
+                                                )}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                {service.color ? (
+                                                    <div className="flex items-center justify-center">
+                                                        <span className={`w-4 h-4 rounded-full ${service.color} border border-black/10`} title={service.color} />
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">-</span>
                                                 )}
                                             </td>
                                             <td className="p-4 text-center font-mono text-sm">{service.duration_minutes} min</td>
@@ -448,6 +463,30 @@ export default function ServicesPage() {
                                     className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black text-sm focus:outline-none focus:ring-2 focus:ring-teal/50 resize-none"
                                     placeholder="Describe el servicio para el asistente IA."
                                 />
+                            </div>
+
+                            {/* Color Picker */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-600 mb-2">Color del Servicio</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['bg-teal-500', 'bg-blue-500', 'bg-purple-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-indigo-500', 'bg-orange-500', 'bg-slate-500'].map(colorClass => (
+                                        <button
+                                            key={colorClass}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, color: colorClass })}
+                                            className={`w-8 h-8 rounded-full ${colorClass} transition-all border-2 ${formData.color === colorClass ? 'border-slate-800 scale-110 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                            title={colorClass}
+                                        />
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, color: null })}
+                                        className={`w-8 h-8 rounded-full bg-white border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400 transition-all ${!formData.color ? 'border-slate-800 text-slate-800 scale-110 shadow-md' : ''}`}
+                                        title="Sin color"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Type toggle: Simple vs Composite */}

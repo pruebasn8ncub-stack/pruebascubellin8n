@@ -123,7 +123,6 @@ export default function AdminDashboard() {
                 <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white border border-slate-200 rounded-3xl p-6 mb-12 shadow-2xl">
                     <div>
                         <h1 className="text-xl font-black text-slate-800">Portal Administrativo</h1>
-                        <p className="text-slate-500 text-sm">Gestiona tu centro clínico</p>
                     </div>
 
                     <div className="flex items-center gap-4">
