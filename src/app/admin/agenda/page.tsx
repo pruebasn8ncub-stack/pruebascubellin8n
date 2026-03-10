@@ -381,6 +381,10 @@ export default function AgendaPage() {
                 <AppointmentDetail
                     appointment={selectedAppointment}
                     onClose={() => setSelectedAppointment(null)}
+                    onDeleted={() => {
+                        setSelectedAppointment(null);
+                        fetchAppointments(dateRange.start, dateRange.end);
+                    }}
                 />
             )}
 
@@ -715,15 +719,34 @@ function DayView({
 function AppointmentDetail({
     appointment: apt,
     onClose,
+    onDeleted,
 }: {
     appointment: Appointment;
     onClose: () => void;
+    onDeleted: () => void;
 }) {
     const [isClosing, setIsClosing] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(onClose, 200);
+    };
+
+    const handleDelete = async () => {
+        setDeleting(true);
+        try {
+            // Delete allocations first (FK constraint)
+            await supabase.from('appointment_allocations').delete().eq('appointment_id', apt.id);
+            const { error } = await supabase.from('appointments').delete().eq('id', apt.id);
+            if (error) throw error;
+            onDeleted();
+        } catch (err: any) {
+            console.error("Error deleting appointment:", err);
+            setDeleting(false);
+            setConfirmDelete(false);
+        }
     };
 
     const overdue = isOverdue(apt);
@@ -746,9 +769,38 @@ function AppointmentDetail({
                 <div className="absolute top-0 right-0 w-8 h-8 bg-white/20 rounded-bl-lg" style={{ boxShadow: "-2px 2px 5px rgba(0,0,0,0.1)" }}></div>
 
                 <div className={`p-6 pb-2 relative ${textColor}`}>
-                    <button onClick={handleClose} className={`absolute top-4 right-4 w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-black/40 rounded-full transition-colors font-bold text-center z-10 shadow-sm  ring-1 ring-white/20`}>
-                        &times;
-                    </button>
+                    <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                        {confirmDelete ? (
+                            <>
+                                <span className={`text-xs font-bold ${textColor} opacity-80`}>¿Borrar cita?</span>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={deleting}
+                                    className="px-2.5 py-1 text-xs font-bold bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                >
+                                    {deleting ? '...' : 'Sí, borrar'}
+                                </button>
+                                <button
+                                    onClick={() => setConfirmDelete(false)}
+                                    disabled={deleting}
+                                    className={`px-2.5 py-1 text-xs font-bold ${textColor} bg-black/20 hover:bg-black/40 rounded-full transition-colors shadow-sm`}
+                                >
+                                    No
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={() => setConfirmDelete(true)}
+                                className={`w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-red-500 hover:text-white rounded-full transition-colors shadow-sm ring-1 ring-white/20`}
+                                title="Eliminar cita"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                            </button>
+                        )}
+                        <button onClick={handleClose} className={`w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-black/40 rounded-full transition-colors font-bold text-center shadow-sm ring-1 ring-white/20`}>
+                            &times;
+                        </button>
+                    </div>
 
                     <div className="flex items-center gap-2 mb-4">
                         <span className={`text-xs font-bold ${isServiceTw ? 'text-white/90' : 'text-slate-800/90'} bg-black/10 px-2 py-1 rounded-sm  shadow-sm ring-1 ring-white/20`}>
@@ -991,7 +1043,7 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-800">Agendar Cita Manual</h2>
+                    <h2 className="text-xl font-bold text-slate-800">Agendar Cita</h2>
                     <button onClick={onClose} disabled={saving} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
