@@ -7,13 +7,14 @@ import { Loader2, Plus, RefreshCw, X, Edit, Trash2, Search } from "lucide-react"
 interface Patient {
     id: string;
     full_name: string;
+    rut: string | null;
     email: string | null;
     phone: string | null;
     notes: string | null;
     created_at: string;
 }
 
-const emptyForm = { full_name: '', email: '', phone: '', notes: '' };
+const emptyForm = { full_name: '', rut: '', email: '', phone: '', notes: '' };
 
 export default function PatientsPage() {
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -44,6 +45,7 @@ export default function PatientsPage() {
             setEditingPatient(patient);
             setFormData({
                 full_name: patient.full_name,
+                rut: patient.rut || '',
                 email: patient.email || '',
                 phone: patient.phone || '',
                 notes: patient.notes || '',
@@ -68,6 +70,7 @@ export default function PatientsPage() {
         setSaving(true);
         const payload = {
             full_name: formData.full_name.trim(),
+            rut: formData.rut.trim() || null,
             email: formData.email.trim(),
             phone: formData.phone.trim(),
             notes: formData.notes.trim(),
@@ -101,6 +104,7 @@ export default function PatientsPage() {
 
     const filteredPatients = patients.filter(p =>
         p.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.rut && p.rut.toLowerCase().includes(search.toLowerCase())) ||
         (p.email && p.email.toLowerCase().includes(search.toLowerCase())) ||
         (p.phone && p.phone.includes(search))
     );
@@ -137,7 +141,7 @@ export default function PatientsPage() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                     type="text"
-                    placeholder="Buscar por nombre, email o teléfono..."
+                    placeholder="Buscar por nombre, RUT, email o teléfono..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal/50"
@@ -154,6 +158,7 @@ export default function PatientsPage() {
                         <thead className="bg-white text-slate-500 uppercase text-xs tracking-wider">
                             <tr>
                                 <th className="p-4 font-medium">Nombre Completo</th>
+                                <th className="p-4 font-medium">RUT</th>
                                 <th className="p-4 font-medium">Email</th>
                                 <th className="p-4 font-medium">Teléfono</th>
                                 <th className="p-4 font-medium">Notas Clínicas</th>
@@ -163,7 +168,7 @@ export default function PatientsPage() {
                         <tbody className="divide-y divide-white/5">
                             {filteredPatients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-slate-500">
+                                    <td colSpan={6} className="p-8 text-center text-slate-500">
                                         {search ? 'No se encontraron resultados para tu búsqueda.' : 'No hay pacientes registrados aún.'}
                                     </td>
                                 </tr>
@@ -171,6 +176,7 @@ export default function PatientsPage() {
                                 filteredPatients.map(patient => (
                                     <tr key={patient.id} className="hover:bg-white transition-colors group">
                                         <td className="p-4 font-semibold">{patient.full_name}</td>
+                                        <td className="p-4 text-slate-600 font-mono text-sm">{patient.rut || <span className="text-slate-800/20 italic text-xs">sin RUT</span>}</td>
                                         <td className="p-4 text-slate-600">{patient.email || <span className="text-slate-800/20 italic text-xs">sin email</span>}</td>
                                         <td className="p-4 text-slate-600">{patient.phone || <span className="text-slate-800/20 italic text-xs">sin teléfono</span>}</td>
                                         <td className="p-4 max-w-xs">
@@ -208,80 +214,94 @@ export default function PatientsPage() {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
-                    <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-                        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between p-6 border-b border-slate-100">
                             <h2 className="text-xl font-bold text-slate-800">
                                 {editingPatient ? 'Editar Paciente' : 'Nuevo Paciente'}
                             </h2>
-                            <button onClick={handleCloseModal} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
+                            <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre Completo *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.full_name}
-                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
-                                    placeholder="Ej. María González Pérez"
-                                />
-                            </div>
+                        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Nombre Completo *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.full_name}
+                                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                                            placeholder="Nombre y Apellido"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-600 mb-1.5">RUT</label>
+                                        <input
+                                            type="text"
+                                            value={formData.rut}
+                                            onChange={(e) => setFormData({ ...formData, rut: e.target.value })}
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                                            placeholder="12345678-9"
+                                        />
+                                    </div>
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Email</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                                            placeholder="correo@ejemplo.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Teléfono *</label>
+                                        <input
+                                            type="tel"
+                                            required
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all"
+                                            placeholder="+569XXXXXXXX"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
-                                    <input
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
-                                        placeholder="correo@ejemplo.com"
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Notas Clínicas</label>
+                                    <textarea
+                                        value={formData.notes}
+                                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                        rows={3}
+                                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal/20 focus:border-teal transition-all resize-none"
+                                        placeholder="Diagnóstico, alergias, observaciones relevantes..."
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1">Teléfono</label>
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={formData.phone}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
-                                        placeholder="+56 9 1234 5678"
-                                    />
-                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-600 mb-1">Notas Clínicas</label>
-                                <textarea
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                    rows={3}
-                                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 resize-none"
-                                    placeholder="Diagnóstico, alergias, observaciones relevantes..."
-                                />
-                            </div>
-
-                            <div className="pt-2 flex justify-end gap-3">
+                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 rounded-b-3xl">
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
-                                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-white rounded-xl transition-colors"
+                                    className="px-4 py-2.5 text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 bg-teal text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:bg-teal-dark transition-all disabled:opacity-50"
                                 >
                                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    {saving ? 'Guardando...' : 'Guardar Paciente'}
+                                    {saving ? 'Guardando...' : (editingPatient ? 'Guardar Cambios' : 'Guardar Paciente')}
                                 </button>
                             </div>
                         </form>

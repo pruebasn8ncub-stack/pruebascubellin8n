@@ -4,7 +4,8 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
     Loader2, Calendar as CalendarIcon, Clock, User, ChevronLeft, ChevronRight,
     Filter, UserCircle, AlertTriangle, ArrowLeft, List, LayoutGrid, CalendarDays,
-    Activity, ClipboardList, Phone, Mail, Plus, X, Save, Pencil
+    Activity, ClipboardList, Phone, Mail, Plus, X, Save, Pencil,
+    Users, Briefcase, UserCog, ChevronDown, ChevronUp, Search
 } from "lucide-react";
 import {
     format, addDays, subDays, addMonths, subMonths,
@@ -257,6 +258,13 @@ export default function AgendaPage() {
 
     return (
         <div className="space-y-4 h-full flex flex-col pt-2">
+            {/* Page Title */}
+            <div>
+                <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
+                    Agenda
+                </h1>
+            </div>
+
             {/* Toolbar */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white border border-slate-200 p-4 rounded-[20px] shadow-sm ">
                 <div className="flex flex-wrap items-center gap-2">
@@ -301,8 +309,8 @@ export default function AgendaPage() {
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
                             {!isCurrentPeriod && (
-                                <button onClick={goToToday} className="px-3 py-1.5 text-xs font-bold rounded-lg bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-colors">
-                                    Hoy
+                                <button onClick={goToToday} className="px-3 py-1.5 text-xs font-bold rounded-lg bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-colors capitalize">
+                                    {format(new Date(), "MMMM", { locale: es })}
                                 </button>
                             )}
                             <button onClick={goForward} className="p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-300 hover:text-slate-800" title="Mes siguiente">
@@ -327,21 +335,7 @@ export default function AgendaPage() {
                         <Plus className="w-4 h-4" />
                         <span className="hidden sm:inline">Nueva Cita</span>
                     </button>
-                    <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1 px-3 border border-slate-200">
-                        <Filter className="w-4 h-4 text-slate-400" />
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                            className="bg-transparent border-none text-slate-700 text-sm font-medium py-1.5 focus:outline-none focus:ring-0 appearance-none cursor-pointer"
-                        >
-                            <option value="all" className="bg-white text-sm">Todas ({appointments.length})</option>
-                            <option value="scheduled" className="bg-white text-sm">Agendadas</option>
-                            <option value="overdue" className="bg-white text-sm">Vencidas ({overdueCount})</option>
-                            <option value="completed" className="bg-white text-sm">Completadas</option>
-                            <option value="cancelled" className="bg-white text-sm">Canceladas</option>
-                            <option value="no_show" className="bg-white text-sm">No Asistió</option>
-                        </select>
-                    </div>
+
                 </div>
             </div>
 
@@ -394,6 +388,7 @@ export default function AgendaPage() {
 
             {isFormModalOpen && (
                 <AppointmentFormModal
+                    defaultDate={viewMode === "day" ? selectedDate : new Date()}
                     onClose={() => setIsFormModalOpen(false)}
                     onSuccess={() => {
                         setIsFormModalOpen(false);
@@ -529,8 +524,6 @@ function MonthCalendarView({
     );
 }
 
-// ─── DAY VIEW (Timeline) ───────────────────────────────────────────────────
-
 function DayView({
     date,
     appointments,
@@ -540,47 +533,22 @@ function DayView({
     appointments: Appointment[];
     onSelectAppointment: (a: Appointment) => void;
 }) {
-    const HOUR_HEIGHT = 90;
-
-    const dayAppointments = appointments.filter(a =>
-        isSameDay(new Date(a.starts_at), date)
+    const dayAppointments = useMemo(() =>
+        appointments
+            .filter(a => isSameDay(new Date(a.starts_at), date))
+            .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),
+        [appointments, date]
     );
-
-    // Dynamic hour range based on actual appointments
-    const { startHour, endHour } = useMemo(() => {
-        if (dayAppointments.length === 0) return { startHour: 8, endHour: 18 };
-        let earliest = 23;
-        let latest = 0;
-        dayAppointments.forEach(apt => {
-            const s = new Date(apt.starts_at);
-            const e = new Date(apt.ends_at);
-            earliest = Math.min(earliest, s.getHours());
-            latest = Math.max(latest, e.getHours() + (e.getMinutes() > 0 ? 1 : 0));
-        });
-        // Add 1 hour padding on each side
-        return { startHour: Math.max(0, earliest - 1), endHour: Math.min(24, latest + 1) };
-    }, [dayAppointments]);
-
-    const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
 
     // Empty state
     if (dayAppointments.length === 0) {
         return (
             <div className="h-full flex flex-col bg-slate-50">
-                <div className="sticky top-0 z-40 bg-white/90 border-b border-slate-200 py-4 px-6 flex items-center gap-4 shadow-sm">
-                    <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl ${isToday(date) ? "bg-teal text-white shadow-lg shadow-teal/30" : "bg-slate-100 text-slate-700"} flex-shrink-0`}>
-                        <span className="text-xs uppercase font-bold tracking-wider">{format(date, "EEE", { locale: es })}</span>
-                        <span className="text-2xl font-black">{format(date, "d")}</span>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-slate-800">
-                            {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
-                        </h3>
-                        <p className="text-sm font-medium text-slate-500 flex items-center gap-1">
-                            <Activity className="w-3.5 h-3.5" />
-                            0 citas programadas
-                        </p>
-                    </div>
+                <div className="sticky top-0 z-40 bg-white/90 border-b border-slate-200 py-4 px-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-800">
+                        {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
+                    </h3>
+
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center max-w-sm text-center">
@@ -595,123 +563,100 @@ function DayView({
         );
     }
 
+    // Group appointments by hour for visual separators
+    const grouped = useMemo(() => {
+        const map = new Map<number, Appointment[]>();
+        dayAppointments.forEach(apt => {
+            const h = new Date(apt.starts_at).getHours();
+            if (!map.has(h)) map.set(h, []);
+            map.get(h)!.push(apt);
+        });
+        return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+    }, [dayAppointments]);
+
     return (
-        <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-slate-50 relative">
-            {/* Day Header - Sticky */}
-            <div className="sticky top-0 z-40 bg-white/90  border-b border-slate-200 py-4 px-6 flex items-center gap-4 shadow-sm">
-                <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl ${isToday(date) ? "bg-teal text-white shadow-lg shadow-teal/30" : "bg-slate-100 text-slate-700"} flex-shrink-0`}>
-                    <span className="text-xs uppercase font-bold tracking-wider">{format(date, "EEE", { locale: es })}</span>
-                    <span className="text-2xl font-black">{format(date, "d")}</span>
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-slate-800">
-                        {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
-                    </h3>
-                    <p className="text-sm font-medium text-slate-500 flex items-center gap-1">
-                        <Activity className="w-3.5 h-3.5" />
-                        {dayAppointments.length} citas programadas
-                    </p>
-                </div>
+        <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50">
+            <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-slate-200 py-4 px-6 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
+                    <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg">{dayAppointments.length} citas</span>
+                </h3>
+
             </div>
 
-            <div className="relative mt-4" style={{ minHeight: hours.length * HOUR_HEIGHT + 40 }}>
-                {/* Grid */}
-                {hours.map((hour) => {
-                    const top = (hour - startHour) * HOUR_HEIGHT;
-                    return (
-                        <div key={hour} className="absolute left-0 right-0 flex" style={{ top }}>
-                            <div className="w-20 flex-shrink-0 text-right pr-6 pt-1 text-xs font-bold text-slate-400 tracking-wider">
-                                {String(hour).padStart(2, "0")}:00
-                            </div>
-                            <div className="flex-1 border-t-2 border-slate-200/60 border-dashed" />
+            <div className="p-4 md:p-6 space-y-1">
+                {grouped.map(([hour, apts]) => (
+                    <div key={hour}>
+                        {/* Hour label */}
+                        <div className="flex items-center gap-3 mb-1.5 mt-3 first:mt-0">
+                            <span className="text-xs font-bold text-slate-400 tracking-wider w-14 text-right flex-shrink-0">
+                                {String(hour).padStart(2, '0')}:00
+                            </span>
+                            <div className="flex-1 h-px bg-slate-200" />
                         </div>
-                    );
-                })}
 
-                {/* Now Indicator */}
-                {isToday(date) && (() => {
-                    const now = new Date();
-                    const minutesSinceStart = (now.getHours() - startHour) * 60 + now.getMinutes();
-                    const top = (minutesSinceStart / 60) * HOUR_HEIGHT;
-                    if (top < 0 || top > hours.length * HOUR_HEIGHT) return null;
-                    return (
-                        <div className="absolute left-20 right-0 z-30 flex items-center pointer-events-none" style={{ top }}>
-                            <div className="w-3 h-3 rounded-full bg-teal shadow-md ring-4 ring-teal/20 -ml-1.5" />
-                            <div className="flex-1 h-0.5 bg-teal/80" />
-                        </div>
-                    );
-                })()}
+                        {/* Appointment rows for this hour */}
+                        <div className="space-y-1.5 ml-[68px]">
+                            {apts.map(apt => {
+                                const start = new Date(apt.starts_at);
+                                const end = new Date(apt.ends_at);
+                                const overdue = isOverdue(apt);
+                                const serviceColor = apt.services?.color || '#14b8a6';
+                                const isTw = serviceColor.startsWith('bg-');
 
-                {/* Cards */}
-                <div className="absolute left-24 right-6 top-0 bottom-0">
-                    {calculateOverlapLayout(dayAppointments).map(({ appointment: apt, columnIndex, totalColumns }) => {
-                        const start = new Date(apt.starts_at);
-                        const end = new Date(apt.ends_at);
-                        const topMin = (start.getHours() - startHour) * 60 + start.getMinutes();
-                        const durationMin = differenceInMinutes(end, start);
-                        const top = (topMin / 60) * HOUR_HEIGHT;
-                        const height = Math.max((durationMin / 60) * HOUR_HEIGHT, 40);
-                        const blockStyle = getBlockStyle(apt);
-                        const widthPercent = 100 / totalColumns;
-                        const leftPercent = columnIndex * widthPercent;
+                                return (
+                                    <button
+                                        key={apt.id}
+                                        onClick={() => onSelectAppointment(apt)}
+                                        className={`w-full flex items-center gap-3 md:gap-4 px-4 py-3 rounded-xl bg-white border text-left
+                                            transition-all duration-150 hover:shadow-md hover:border-slate-300 group
+                                            ${overdue ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100'}`}
+                                    >
+                                        {/* Service color indicator */}
+                                        <div
+                                            className={`w-1.5 h-10 rounded-full flex-shrink-0 ${isTw ? serviceColor.replace('bg-', 'bg-') : ''}`}
+                                            style={isTw ? undefined : { backgroundColor: serviceColor }}
+                                        />
 
-                        return (
-                            <button
-                                key={apt.id}
-                                onClick={() => onSelectAppointment(apt)}
-                                className={`absolute rounded-xl border p-3 cursor-pointer text-left flex flex-col group
-                                    transition-all duration-300 ease-out hover:shadow-2xl hover:z-50 focus:outline-none focus:ring-2 focus:ring-teal
-                                    ${blockStyle.className}`}
-                                style={{
-                                    top,
-                                    height: height - 4,
-                                    left: `calc(${leftPercent}% + 4px)`,
-                                    width: `calc(${widthPercent}% - 8px)`,
-                                    zIndex: 10 + columnIndex,
-                                    ...blockStyle.style,
-                                }}
-                            >
-                                <div className="flex flex-row items-center gap-3 h-full relative w-full px-2">
-                                    <div className={`flex items-center gap-1.5 flex-shrink-0 text-left bg-black/10 px-2 py-1 rounded-md shadow-inner border border-slate-200 ${blockStyle.textClassName}`}>
-                                        <Clock className="w-3.5 h-3.5 opacity-80" />
-                                        <span className="text-xs md:text-sm font-black tracking-tight leading-none drop-shadow-sm">{format(start, "HH:mm")}</span>
-                                        {height >= 40 && (
-                                            <>
-                                                <span className="text-[10px] md:text-sm font-semibold opacity-60">-</span>
-                                                <span className="text-xs md:text-sm font-semibold opacity-90 leading-none drop-shadow-sm">{format(end, "HH:mm")}</span>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {height >= 40 && <div className="w-px h-6 bg-white/20 hidden sm:block"></div>}
-
-                                    <div className={`flex flex-row items-center flex-wrap sm:flex-nowrap gap-x-4 gap-y-1 overflow-hidden w-full ${blockStyle.textClassName}`}>
-                                        <div className="flex items-center gap-2 min-w-0 shrink-0">
-                                            <span className="text-sm md:text-base font-bold truncate leading-tight drop-shadow-md">
-                                                {apt.patients?.full_name || "Paciente no especificado"}
-                                            </span>
+                                        {/* Time */}
+                                        <div className="flex-shrink-0 text-center w-24">
+                                            <span className="text-sm font-bold text-slate-700">{format(start, 'HH:mm')}</span>
+                                            <span className="text-slate-400 mx-1">–</span>
+                                            <span className="text-sm text-slate-500">{format(end, 'HH:mm')}</span>
                                         </div>
 
-                                        {height >= 40 && (
-                                            <div className="flex items-center gap-3 min-w-0 opacity-90 text-[11px] md:text-xs font-medium">
-                                                <span className="flex items-center gap-1.5 truncate drop-shadow-sm bg-black/5 px-2 py-0.5 rounded-full border border-slate-200 hidden md:flex">
-                                                    <Activity className="w-3 h-3" /> <span className="truncate">{apt.services?.name}</span>
-                                                </span>
-                                                <span className="flex items-center gap-1.5 truncate drop-shadow-sm text-slate-800/80">
-                                                    <UserCircle className="w-3.5 h-3.5" /> <span className="truncate">{getProfessionalName(apt)}</span>
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
+                                        {/* Patient */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-slate-800 truncate">
+                                                {apt.patients?.full_name || 'Paciente no especificado'}
+                                            </p>
+                                            <p className="text-xs text-slate-400 truncate">
+                                                {apt.services?.name || 'Sin servicio'}
+                                            </p>
+                                        </div>
 
-                                    {isOverdue(apt) && (
-                                        <AlertTriangle className="absolute top-1/2 -translate-y-1/2 right-2 w-4 h-4 text-slate-800 drop-shadow-sm" />
-                                    )}
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
+                                        {/* Professional */}
+                                        <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 flex-shrink-0">
+                                            <UserCircle className="w-3.5 h-3.5" />
+                                            <span className="truncate max-w-[120px]">{getProfessionalName(apt)}</span>
+                                        </div>
+
+                                        {/* Overdue badge */}
+                                        {overdue && (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full flex-shrink-0">
+                                                <AlertTriangle className="w-3 h-3" />
+                                                Vencida
+                                            </span>
+                                        )}
+
+                                        {/* Chevron */}
+                                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 flex-shrink-0 transition-colors" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -757,144 +702,116 @@ function AppointmentDetail({
     };
 
     const overdue = isOverdue(apt);
-    const serviceColorVal = apt.services?.color || "bg-teal-500";
-    const isServiceTw = serviceColorVal.startsWith("bg-");
-    const textColor = isServiceTw ? "text-white" : "text-slate-800";
+    const serviceColorVal = apt.services?.color || '#14b8a6';
+    const isTw = serviceColorVal.startsWith('bg-');
 
     return (<>
         <div
-            className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40  p-4 duration-200 ease-in-out
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 duration-200 ease-in-out
                 ${isClosing ? "animate-out fade-out opacity-0" : "animate-in fade-in"}`}
             onClick={handleClose}
         >
             <div
-                className={`w-full max-w-md shadow-2xl overflow-hidden rounded-sm duration-200 ease-in-out relative ${isServiceTw ? serviceColorVal : ''}
+                className={`w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh] duration-200 ease-in-out
                     ${isClosing ? "animate-out zoom-out-95 opacity-0 scale-95" : "animate-in zoom-in-105 scale-100"}`}
                 onClick={(e) => e.stopPropagation()}
-                style={isServiceTw ? undefined : { backgroundColor: serviceColorVal }}
             >
-                <div className="absolute top-0 right-0 w-8 h-8 bg-white/20 rounded-bl-lg" style={{ boxShadow: "-2px 2px 5px rgba(0,0,0,0.1)" }}></div>
-
-                <div className={`p-6 pb-2 relative ${textColor}`}>
-                    <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-                        <button
-                            onClick={() => setIsEditOpen(true)}
-                            className={`w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-blue-500 hover:text-white rounded-full transition-colors shadow-sm ring-1 ring-white/20`}
-                            title="Editar cita"
-                        >
-                            <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => setConfirmDelete(true)}
-                            className={`w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-red-500 hover:text-white rounded-full transition-colors shadow-sm ring-1 ring-white/20`}
-                            title="Eliminar cita"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
-                        </button>
-                        <button onClick={handleClose} className={`w-8 h-8 flex items-center justify-center ${textColor} bg-black/20 hover:bg-black/40 rounded-full transition-colors font-bold text-center shadow-sm ring-1 ring-white/20`}>
-                            &times;
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className={`text-xs font-bold ${isServiceTw ? 'text-white/90' : 'text-slate-800/90'} bg-black/10 px-2 py-1 rounded-sm  shadow-sm ring-1 ring-white/20`}>
-                            {format(new Date(apt.starts_at), "dd MMM yy")}
-                        </span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 px-2 py-1 rounded-sm border border-white/30 bg-slate-50">
-                            {apt.status === "cancelled" ? "Cancelada" : overdue ? "Vencida" : apt.status}
+                {/* Header — same style as edit/create */}
+                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold text-slate-800">Detalle de Cita</h2>
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
+                            apt.status === "cancelled"
+                                ? "text-red-600 bg-red-50"
+                                : overdue
+                                ? "text-amber-600 bg-amber-50"
+                                : "text-teal bg-teal-light"
+                        }`}>
+                            {apt.status === "cancelled" ? "Cancelada" : overdue ? "Vencida" : "Programada"}
                         </span>
                     </div>
-
-                    <h2 className="text-3xl font-black tracking-tight leading-none mb-2 drop-shadow-md">
-                        {apt.patients?.full_name || "Paciente no especificado"}
-                    </h2>
-
-                    {apt.services?.name && (
-                        <h3 className="text-sm font-bold opacity-90 flex items-center gap-1.5 drop-shadow-sm">
-                            <Activity className="w-4 h-4" />
-                            {apt.services.name}
-                        </h3>
-                    )}
+                    <button onClick={handleClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <div className="p-6 pt-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <DetailCard textColor={textColor} icon={<Clock />} title="Horario" value={`${format(new Date(apt.starts_at), "HH:mm")} - ${format(new Date(apt.ends_at), "HH:mm")}`} />
-                        <DetailCard textColor={textColor} icon={<UserCircle />} title="Profesional" value={getProfessionalName(apt)} />
-                        {getResourceName(apt) && (
-                            <DetailCard textColor={textColor} icon={<LayoutGrid />} title="Recurso" value={getResourceName(apt)!} />
-                        )}
-                        {apt.patients?.phone && (
-                            <DetailCard textColor={textColor} icon={<Phone />} title="Teléfono" value={apt.patients.phone} />
-                        )}
-                        {apt.patients?.email && (
-                            <DetailCard textColor={textColor} icon={<Mail />} title="Correo Electrónico" value={apt.patients.email} />
-                        )}
+                {/* Body — same padding and scroll as edit/create */}
+                <div className="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-4">
+                    {/* Patient — same style as CustomSelect */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Paciente *</label>
+                        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-300 bg-white">
+                            <Users className="w-4 h-4 text-teal flex-shrink-0" />
+                            <span className="flex-1 truncate text-slate-800 font-medium">{apt.patients?.full_name || "Paciente no especificado"}</span>
+                            {apt.patients?.phone && (
+                                <span className="text-xs text-slate-400 flex-shrink-0">{apt.patients.phone}</span>
+                            )}
+                        </div>
                     </div>
 
-                    {apt.services?.is_composite && apt.appointment_allocations && apt.appointment_allocations.length > 0 && (
-                        <div className={`bg-black/10 rounded-sm p-4 border border-white/20 mt-4 shadow-inner ${textColor}`}>
-                            <h4 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-4 opacity-70">
-                                <Activity className="w-4 h-4" /> Desglose de Fases
-                            </h4>
-                            <div className="flex flex-col gap-2.5 relative">
-                                {apt.appointment_allocations
-                                    .slice()
-                                    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-                                    .map((alloc, idx) => {
-                                        const allocStart = new Date(alloc.starts_at);
-                                        const allocEnd = new Date(alloc.ends_at);
-                                        const subService = alloc.service_phases?.sub_services;
-                                        const phaseLabel = alloc.service_phases?.label || subService?.name || `Fase ${idx + 1}`;
-                                        const phaseColorVal = subService?.color || "bg-black/20";
-                                        const isPhaseTw = phaseColorVal.startsWith("bg-");
-                                        const phaseTextColor = isPhaseTw ? "text-white" : "text-slate-800";
-                                        const profName = alloc.profiles?.full_name || "Sin asignar";
-                                        const resName = alloc.physical_resources?.name || "";
+                    {/* Service — same style as CustomSelect with dot */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Servicio principal *</label>
+                        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-300 bg-white">
+                            <Briefcase className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            <span className="flex-1 truncate text-slate-800 font-medium">{apt.services?.name || "Sin servicio"}</span>
+                            {apt.services?.duration_minutes && (
+                                <span className="text-xs text-slate-400 flex-shrink-0">{apt.services.duration_minutes} min</span>
+                            )}
+                        </div>
+                    </div>
 
-                                        return (
-                                            <div
-                                                key={alloc.id}
-                                                className={`relative flex flex-col p-3 rounded-sm shadow-sm border border-white/20 transition-transform hover:-translate-y-0.5 ${isPhaseTw ? phaseColorVal : ''} ${phaseTextColor}`}
-                                                style={isPhaseTw ? undefined : { backgroundColor: phaseColorVal }}
-                                            >
-                                                <div className="absolute top-0 right-0 w-3 h-3 bg-white/20 rounded-bl-sm" style={{ boxShadow: "-1px 1px 2px rgba(0,0,0,0.1)" }}></div>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-black/20 text-[10px] font-black shrink-0 shadow-inner">
-                                                            {idx + 1}
-                                                        </span>
-                                                        <h5 className="font-bold text-sm drop-shadow-sm">{phaseLabel}</h5>
-                                                    </div>
-                                                    <div className="text-[10px] bg-black/20 px-2 py-0.5 rounded-sm font-bold tracking-widest text-right shrink-0 border border-slate-200 shadow-inner">
-                                                        {format(allocStart, "HH:mm")} - {format(allocEnd, "HH:mm")}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-4 text-[10px] font-semibold mt-1 bg-black/10 p-2 rounded-sm border border-slate-200 shadow-inner flex-wrap">
-                                                    <div className="flex items-center gap-1.5 drop-shadow-sm">
-                                                        <UserCircle className="w-3.5 h-3.5 opacity-80" /> {profName}
-                                                    </div>
-                                                    {resName && (
-                                                        <div className="flex items-center gap-1.5 drop-shadow-sm">
-                                                            <LayoutGrid className="w-3.5 h-3.5 opacity-80" /> {resName}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                    {/* Professional — same style as CustomSelect */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Profesional asignado *</label>
+                        <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-300 bg-white">
+                            <UserCog className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                            <span className="flex-1 truncate text-slate-800 font-medium">{getProfessionalName(apt)}</span>
+                        </div>
+                    </div>
+
+                    {/* Date & Time — same grid as edit/create */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Fecha *</label>
+                            <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-300 bg-white">
+                                <CalendarIcon className="w-4 h-4 text-teal flex-shrink-0" />
+                                <span className="flex-1 text-slate-800 font-medium">{format(new Date(apt.starts_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
                             </div>
                         </div>
-                    )}
-
-                    {apt.notes && (
-                        <div className={`bg-black/10 rounded-sm p-4 border border-white/20 mt-4 shadow-inner ${textColor}`}>
-                            <h4 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-2 opacity-70">
-                                <ClipboardList className="w-4 h-4" /> Notas
-                            </h4>
-                            <p className="text-sm font-medium whitespace-pre-wrap">{apt.notes}</p>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Hora de inicio *</label>
+                            <div className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border border-gray-300 bg-white">
+                                <Clock className="w-4 h-4 text-teal flex-shrink-0" />
+                                <span className="flex-1 text-slate-800 font-medium">{format(new Date(apt.starts_at), "hh:mm a")}</span>
+                            </div>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Notes — same textarea style */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1.5">Notas (Opcional)</label>
+                        <div className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 whitespace-pre-wrap min-h-[80px]">
+                            {apt.notes || <span className="text-slate-400">Sin notas</span>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer — same style as edit/create */}
+                <div className="p-6 border-t border-slate-100 bg-slate-50 flex items-center justify-between rounded-b-3xl">
+                    <button
+                        onClick={() => setConfirmDelete(true)}
+                        className="px-4 py-2.5 text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                        Eliminar
+                    </button>
+                    <button
+                        onClick={() => setIsEditOpen(true)}
+                        className="px-6 py-2.5 text-sm font-bold text-white bg-teal rounded-xl shadow-md hover:shadow-lg hover:bg-teal-dark transition-all flex items-center gap-2"
+                    >
+                        <Pencil className="w-4 h-4" /> Editar Cita
+                    </button>
                 </div>
             </div>
         </div>
@@ -915,7 +832,7 @@ function AppointmentDetail({
                             <button
                                 onClick={() => setConfirmDelete(false)}
                                 disabled={deleting}
-                                className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+                                className="flex-1 px-4 py-2.5 text-sm font-bold text-rose-400 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all"
                             >
                                 Cancelar
                             </button>
@@ -950,23 +867,9 @@ function AppointmentDetail({
     );
 }
 
-function DetailCard({ icon, title, value, textColor = "text-slate-800" }: { icon: React.ReactNode; title: string; value: string; textColor?: string }) {
-    return (
-        <div className={`flex items-start gap-2.5 p-3 rounded-sm bg-black/10 border border-white/20 shadow-sm ${textColor}`}>
-            <div className={`p-1.5 bg-white/20 rounded shadow-inner ${textColor}`}>
-                {React.cloneElement(icon as React.ReactElement, { className: "w-4 h-4 drop-shadow-sm" })}
-            </div>
-            <div className={`min-w-0 ${textColor}`}>
-                <p className={`text-[9px] font-black uppercase tracking-wider mb-0.5 opacity-70`}>{title}</p>
-                <p className="text-xs font-bold truncate drop-shadow-sm">{value}</p>
-            </div>
-        </div>
-    );
-}
-
 // ─── Manual Appointment Form Modal ──────────────────────────────────────────
 
-function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+function AppointmentFormModal({ defaultDate, onClose, onSuccess }: { defaultDate?: Date, onClose: () => void, onSuccess: () => void }) {
     const [loadingData, setLoadingData] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -976,11 +879,23 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
     const [services, setServices] = useState<Service[]>([]);
     const [professionals, setProfessionals] = useState<Professional[]>([]);
 
+    // Use defaultDate if provided, but never allow a past date
+    const initialDate = (() => {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (defaultDate) {
+            const d = new Date(defaultDate);
+            d.setHours(0,0,0,0);
+            return d >= today ? format(defaultDate, "yyyy-MM-dd") : format(today, "yyyy-MM-dd");
+        }
+        return format(today, "yyyy-MM-dd");
+    })();
+
     const [form, setForm] = useState({
         patient_id: "",
         service_id: "",
         professional_id: "",
-        date: format(new Date(), "yyyy-MM-dd"),
+        date: initialDate,
         time: "09:00",
         notes: ""
     });
@@ -1083,7 +998,7 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-xl font-bold text-slate-800">Agendar Cita</h2>
@@ -1106,79 +1021,65 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
                                 </div>
                             )}
 
+                            {/* Patient Dropdown */}
                             <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <label className="block text-sm font-bold text-slate-700">Paciente <span className="text-red-500">*</span></label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsNewPatientModalOpen(true)}
-                                        className="text-xs font-semibold text-teal hover:text-teal-dark flex items-center gap-1 bg-teal/10 px-2 py-1 rounded"
-                                    >
-                                        <Plus className="w-3 h-3" /> Nuevo Paciente
-                                    </button>
-                                </div>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Paciente *</label>
+                                <CustomSelect
                                     value={form.patient_id}
-                                    onChange={e => setForm({ ...form, patient_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Paciente --</option>
-                                    {patients.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, patient_id: val })}
+                                    placeholder="Buscar paciente..."
+                                    icon={<Users className="w-4 h-4 text-teal" />}
+                                    options={patients.map(p => ({ value: p.id, label: p.full_name, sub: p.email || p.phone || '' }))}
+                                    onAdd={() => setIsNewPatientModalOpen(true)}
+                                    addLabel="Nuevo Paciente"
+                                />
                             </div>
 
+                            {/* Service Dropdown */}
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Servicio principal <span className="text-red-500">*</span></label>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Servicio principal *</label>
+                                <CustomSelect
                                     value={form.service_id}
-                                    onChange={e => setForm({ ...form, service_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Servicio --</option>
-                                    {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes} min)</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, service_id: val })}
+                                    placeholder="Buscar servicio..."
+                                    icon={<Briefcase className="w-4 h-4 text-blue-500" />}
+                                    options={services.map(s => ({ value: s.id, label: s.name, sub: `${s.duration_minutes} min`, dot: s.color }))}
+                                />
                             </div>
 
+                            {/* Professional Dropdown */}
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Profesional asignado <span className="text-red-500">*</span></label>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Profesional asignado *</label>
+                                <CustomSelect
                                     value={form.professional_id}
-                                    onChange={e => setForm({ ...form, professional_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Profesional --</option>
-                                    {professionals.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, professional_id: val })}
+                                    placeholder="Buscar profesional..."
+                                    icon={<UserCog className="w-4 h-4 text-purple-500" />}
+                                    options={professionals.map(p => ({ value: p.id, label: p.full_name }))}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Fecha <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="date"
-                                        required
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Fecha *</label>
+                                    <CustomDatePicker
                                         value={form.date}
-                                        onChange={e => setForm({ ...form, date: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                        onChange={(val) => setForm({ ...form, date: val })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Hora de inicio <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="time"
-                                        required
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Hora de inicio *</label>
+                                    <CustomTimePicker
                                         value={form.time}
-                                        onChange={e => setForm({ ...form, time: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                        onChange={(val) => setForm({ ...form, time: val })}
                                     />
                                 </div>
                             </div>
 
+
+
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Notas (Opcional)</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Notas (Opcional)</label>
                                 <textarea
                                     rows={3}
                                     value={form.notes}
@@ -1196,7 +1097,7 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
                         type="button"
                         onClick={onClose}
                         disabled={saving}
-                        className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all"
+                        className="px-5 py-2.5 text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
                         Cancelar
                     </button>
@@ -1220,6 +1121,340 @@ function AppointmentFormModal({ onClose, onSuccess }: { onClose: () => void, onS
                     onClose={() => setIsNewPatientModalOpen(false)}
                     onSuccess={handlePatientCreated}
                 />
+            )}
+        </div>
+    );
+}
+
+// ─── Custom Date Picker ──────────────────────────────────────────────────────
+
+function CustomDatePicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+    const [open, setOpen] = useState(false);
+
+    const selected = value ? new Date(value + 'T12:00:00') : null;
+    const [viewDate, setViewDate] = useState(selected || new Date());
+
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startPad = (firstDay.getDay() + 6) % 7;
+    const days: (number | null)[] = Array(startPad).fill(null);
+    for (let d = 1; d <= lastDay.getDate(); d++) days.push(d);
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const dayNames = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    const formatDisplay = (v: string) => {
+        if (!v) return '';
+        const d = new Date(v + 'T12:00:00');
+        return format(d, "d 'de' MMMM, yyyy", { locale: es });
+    };
+
+    const handleSelect = (day: number) => {
+        const m = String(month + 1).padStart(2, '0');
+        const d = String(day).padStart(2, '0');
+        onChange(`${year}-${m}-${d}`);
+        setOpen(false);
+    };
+
+    const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border bg-white text-left transition-all ${
+                    open ? 'border-teal ring-2 ring-teal/20 shadow-lg' : 'border-gray-300 hover:border-slate-400'
+                }`}
+            >
+                <CalendarIcon className="w-4 h-4 text-teal flex-shrink-0" />
+                <span className={`flex-1 truncate ${value ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
+                    {value ? formatDisplay(value) : 'Seleccionar fecha...'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            </button>
+
+            {open && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-80 overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-r from-teal to-blue-500 p-4 text-white">
+                            <p className="text-xs font-medium opacity-80">Seleccionar fecha</p>
+                            <p className="text-lg font-bold mt-1">{value ? formatDisplay(value) : 'Sin seleccionar'}</p>
+                        </div>
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <button type="button" onClick={prevMonth} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                                    <ChevronLeft className="w-5 h-5 text-slate-600" />
+                                </button>
+                                <span className="text-sm font-bold text-slate-800">{monthNames[month]} {year}</span>
+                                <button type="button" onClick={nextMonth} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+                                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {dayNames.map(dn => (
+                                    <div key={dn} className="text-center text-[11px] font-bold text-slate-400 py-1">{dn}</div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-7 gap-1">
+                                {days.map((day, i) => {
+                                    if (day === null) return <div key={`empty-${i}`} />;
+                                    const m = String(month + 1).padStart(2, '0');
+                                    const d = String(day).padStart(2, '0');
+                                    const dateStr = `${year}-${m}-${d}`;
+                                    const isSelected = value === dateStr;
+                                    const isToday2 = todayStr === dateStr;
+                                    const isPast = dateStr < todayStr;
+                                    return (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            disabled={isPast}
+                                            onClick={() => handleSelect(day)}
+                                            className={`w-9 h-9 mx-auto rounded-full text-sm font-medium transition-all ${
+                                                isPast
+                                                    ? 'text-slate-300 cursor-not-allowed'
+                                                    : isSelected
+                                                        ? 'bg-gradient-to-r from-teal to-blue-500 text-white shadow-md'
+                                                        : isToday2
+                                                            ? 'bg-teal/10 text-teal font-bold ring-2 ring-teal/30'
+                                                            : 'text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            {day}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="p-3 border-t border-slate-100 flex justify-end gap-2">
+                            <button type="button" onClick={() => setOpen(false)} className="px-4 py-1.5 text-sm font-medium text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">Cancelar</button>
+                            <button type="button" onClick={() => { const today = format(new Date(), 'yyyy-MM-dd'); onChange(today); setOpen(false); }} className="px-4 py-1.5 text-sm font-semibold text-teal hover:bg-teal/10 rounded-lg transition-colors">Hoy</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+// ─── Custom Time Picker ──────────────────────────────────────────────────────
+
+function CustomTimePicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const [tempHour, setTempHour] = useState(() => value ? parseInt(value.split(':')[0]) : 9);
+    const [tempMinute, setTempMinute] = useState(() => value ? parseInt(value.split(':')[1]) : 0);
+
+    const formatDisplay = (v: string) => {
+        if (!v) return '';
+        const h = parseInt(v.split(':')[0]);
+        return `${v} ${h < 12 ? 'AM' : 'PM'}`;
+    };
+
+    const handleOpen = () => {
+        if (value) {
+            setTempHour(parseInt(value.split(':')[0]));
+            // Snap minute to nearest 15
+            const m = parseInt(value.split(':')[1]);
+            setTempMinute(Math.round(m / 15) * 15 % 60);
+        }
+        setOpen(true);
+    };
+
+    const incHour = () => setTempHour(h => h >= 20 ? 8 : h + 1);
+    const decHour = () => setTempHour(h => h <= 8 ? 20 : h - 1);
+    const incMin = () => setTempMinute(m => (m + 15) % 60);
+    const decMin = () => setTempMinute(m => (m - 15 + 60) % 60);
+
+    const handleConfirm = () => {
+        const hStr = String(tempHour).padStart(2, '0');
+        const mStr = String(tempMinute).padStart(2, '0');
+        onChange(`${hStr}:${mStr}`);
+        setOpen(false);
+    };
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={handleOpen}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border bg-white text-left transition-all ${
+                    open ? 'border-teal ring-2 ring-teal/20 shadow-lg' : 'border-gray-300 hover:border-slate-400'
+                }`}
+            >
+                <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span className={`flex-1 truncate ${value ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
+                    {value ? formatDisplay(value) : 'Seleccionar hora...'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            </button>
+
+            {open && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-72 overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-r from-teal to-blue-500 p-4 text-white text-center">
+                            <p className="text-xs font-medium opacity-80">Seleccionar hora</p>
+                        </div>
+                        <div className="p-6 flex items-center justify-center gap-2">
+                            {/* Hour spinner */}
+                            <div className="flex flex-col items-center gap-1">
+                                <button type="button" onClick={incHour} className="p-2 rounded-xl hover:bg-slate-100 transition-colors group">
+                                    <ChevronUp className="w-6 h-6 text-slate-400 group-hover:text-teal transition-colors" />
+                                </button>
+                                <div className="w-20 h-20 flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-slate-200">
+                                    <span className="text-4xl font-bold font-mono text-slate-800">{String(tempHour).padStart(2, '0')}</span>
+                                </div>
+                                <button type="button" onClick={decHour} className="p-2 rounded-xl hover:bg-slate-100 transition-colors group">
+                                    <ChevronDown className="w-6 h-6 text-slate-400 group-hover:text-teal transition-colors" />
+                                </button>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Hora</span>
+                            </div>
+
+                            {/* Separator */}
+                            <span className="text-4xl font-bold text-slate-300 mb-8">:</span>
+
+                            {/* Minute spinner */}
+                            <div className="flex flex-col items-center gap-1">
+                                <button type="button" onClick={incMin} className="p-2 rounded-xl hover:bg-slate-100 transition-colors group">
+                                    <ChevronUp className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                </button>
+                                <div className="w-20 h-20 flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-slate-200">
+                                    <span className="text-4xl font-bold font-mono text-slate-800">{String(tempMinute).padStart(2, '0')}</span>
+                                </div>
+                                <button type="button" onClick={decMin} className="p-2 rounded-xl hover:bg-slate-100 transition-colors group">
+                                    <ChevronDown className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                </button>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Min</span>
+                            </div>
+                        </div>
+                        <div className="p-3 border-t border-slate-100 flex justify-end gap-2">
+                            <button type="button" onClick={() => setOpen(false)} className="px-4 py-1.5 text-sm font-medium text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">Cancelar</button>
+                            <button type="button" onClick={handleConfirm} className="px-4 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-teal to-blue-500 rounded-lg shadow-sm hover:shadow-md transition-all">OK</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+// ─── Custom Searchable Select ────────────────────────────────────────────────
+
+interface SelectOption {
+    value: string;
+    label: string;
+    sub?: string;
+    dot?: string;
+}
+
+function CustomSelect({ value, onChange, options, placeholder, icon, onAdd, addLabel }: {
+    value: string;
+    onChange: (val: string) => void;
+    options: SelectOption[];
+    placeholder: string;
+    icon?: React.ReactNode;
+    onAdd?: () => void;
+    addLabel?: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const ref = React.useRef<HTMLDivElement>(null);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    const selected = options.find(o => o.value === value);
+
+    const filtered = options.filter(o =>
+        o.label.toLowerCase().includes(search.toLowerCase()) ||
+        (o.sub && o.sub.toLowerCase().includes(search.toLowerCase()))
+    );
+
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        }
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, []);
+
+    useEffect(() => {
+        if (open && inputRef.current) inputRef.current.focus();
+    }, [open]);
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => { setOpen(!open); setSearch(""); }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border bg-white text-left transition-all ${
+                    open ? 'border-teal ring-2 ring-teal/20 shadow-lg' : 'border-gray-300 hover:border-slate-400'
+                }`}
+            >
+                {icon && <span className="flex-shrink-0">{icon}</span>}
+                <span className={`flex-1 truncate ${selected ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
+                    {selected ? selected.label : placeholder}
+                </span>
+                {selected && selected.sub && (
+                    <span className="text-xs text-slate-400 flex-shrink-0">{selected.sub}</span>
+                )}
+                <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+
+            {open && (
+                <div className="absolute z-50 mt-1.5 w-full bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden">
+                    <div className="p-2 border-b border-slate-100">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder={placeholder}
+                                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-teal/30 focus:border-teal bg-slate-50"
+                            />
+                        </div>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                        {filtered.length === 0 ? (
+                            <div className="px-4 py-6 text-center text-sm text-slate-400">Sin resultados</div>
+                        ) : (
+                            filtered.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => { onChange(opt.value); setOpen(false); setSearch(""); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-teal/5 ${
+                                        opt.value === value ? 'bg-teal/10 text-teal font-semibold' : 'text-slate-700'
+                                    }`}
+                                >
+                                    {opt.dot && (
+                                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 bg-gradient-to-br ${opt.dot}`} />
+                                    )}
+                                    <span className="flex-1 truncate">{opt.label}</span>
+                                    {opt.sub && <span className="text-xs text-slate-400 flex-shrink-0">{opt.sub}</span>}
+                                </button>
+                            ))
+                        )}
+                    </div>
+                    {onAdd && (
+                        <div className="p-2 border-t border-slate-100">
+                            <button
+                                type="button"
+                                onClick={() => { setOpen(false); onAdd(); }}
+                                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-teal to-blue-500 rounded-lg hover:shadow-md transition-all"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                {addLabel || 'Crear nuevo'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );
@@ -1320,7 +1555,7 @@ function AppointmentEditModal({ appointment: apt, onClose, onSuccess }: {
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <h2 className="text-xl font-bold text-slate-800">Editar Cita</h2>
@@ -1341,70 +1576,61 @@ function AppointmentEditModal({ appointment: apt, onClose, onSuccess }: {
                                 <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium">{error}</div>
                             )}
 
+                            {/* Patient Dropdown */}
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Paciente <span className="text-red-500">*</span></label>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Paciente *</label>
+                                <CustomSelect
                                     value={form.patient_id}
-                                    onChange={e => setForm({ ...form, patient_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Paciente --</option>
-                                    {patients.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, patient_id: val })}
+                                    placeholder="Buscar paciente..."
+                                    icon={<Users className="w-4 h-4 text-teal" />}
+                                    options={patients.map(p => ({ value: p.id, label: p.full_name, sub: p.email || p.phone || '' }))}
+                                />
                             </div>
 
+                            {/* Service Dropdown */}
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Servicio principal <span className="text-red-500">*</span></label>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Servicio principal *</label>
+                                <CustomSelect
                                     value={form.service_id}
-                                    onChange={e => setForm({ ...form, service_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Servicio --</option>
-                                    {services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes} min)</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, service_id: val })}
+                                    placeholder="Buscar servicio..."
+                                    icon={<Briefcase className="w-4 h-4 text-blue-500" />}
+                                    options={services.map(s => ({ value: s.id, label: s.name, sub: `${s.duration_minutes} min`, dot: s.color }))}
+                                />
                             </div>
 
+                            {/* Professional Dropdown */}
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Profesional asignado <span className="text-red-500">*</span></label>
-                                <select
-                                    required
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Profesional asignado *</label>
+                                <CustomSelect
                                     value={form.professional_id}
-                                    onChange={e => setForm({ ...form, professional_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
-                                >
-                                    <option value="">-- Seleccionar Profesional --</option>
-                                    {professionals.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
-                                </select>
+                                    onChange={(val) => setForm({ ...form, professional_id: val })}
+                                    placeholder="Buscar profesional..."
+                                    icon={<UserCog className="w-4 h-4 text-purple-500" />}
+                                    options={professionals.map(p => ({ value: p.id, label: p.full_name }))}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Fecha <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="date"
-                                        required
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Fecha *</label>
+                                    <CustomDatePicker
                                         value={form.date}
-                                        onChange={e => setForm({ ...form, date: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                        onChange={(val) => setForm({ ...form, date: val })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Hora de inicio <span className="text-red-500">*</span></label>
-                                    <input
-                                        type="time"
-                                        required
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Hora de inicio *</label>
+                                    <CustomTimePicker
                                         value={form.time}
-                                        onChange={e => setForm({ ...form, time: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all"
+                                        onChange={(val) => setForm({ ...form, time: val })}
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5">Notas (Opcional)</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Notas (Opcional)</label>
                                 <textarea
                                     rows={3}
                                     value={form.notes}
@@ -1422,7 +1648,7 @@ function AppointmentEditModal({ appointment: apt, onClose, onSuccess }: {
                         type="button"
                         onClick={onClose}
                         disabled={saving}
-                        className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all"
+                        className="px-5 py-2.5 text-sm font-bold text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
                         Cancelar
                     </button>
@@ -1454,7 +1680,7 @@ function NewPatientModal({ onClose, onSuccess }: { onClose: () => void, onSucces
         rut: "",
         email: "",
         phone: "",
-        address: ""
+        notes: ""
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1472,7 +1698,7 @@ function NewPatientModal({ onClose, onSuccess }: { onClose: () => void, onSucces
                     rut: form.rut || null,
                     email: form.email || null,
                     phone: form.phone || null,
-                    address: form.address || null
+                    notes: form.notes || null
                 })
                 .select('id')
                 .single();
@@ -1486,80 +1712,99 @@ function NewPatientModal({ onClose, onSuccess }: { onClose: () => void, onSucces
     };
 
     return (
-        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-800">Crear Nuevo Paciente</h2>
-                    <button onClick={onClose} disabled={saving} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+        <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+                <div className="flex justify-between items-center p-5 border-b border-slate-100">
+                    <h2 className="text-xl font-bold text-slate-800">Nuevo Paciente</h2>
+                    <button onClick={onClose} disabled={saving} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-5 overflow-y-auto">
-                    <form id="new-patient-form" onSubmit={handleSubmit} className="space-y-4">
-                        {error && (
-                            <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium">
-                                {error}
-                            </div>
-                        )}
+                <form id="new-patient-form" onSubmit={handleSubmit} className="p-6 space-y-4">
+                    {error && (
+                        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">Nombre Completo *</label>
                             <input
+                                type="text"
                                 required
                                 value={form.full_name}
                                 onChange={e => setForm({ ...form, full_name: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all text-sm"
+                                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
+                                placeholder="Nombre y Apellido"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">RUT (Opcional)</label>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">RUT</label>
                             <input
+                                type="text"
                                 value={form.rut}
                                 onChange={e => setForm({ ...form, rut: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all text-sm"
+                                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
+                                placeholder="12345678-9"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Email <span className="text-slate-400 font-normal">(Opcional)</span></label>
-                                <input
-                                    type="email"
-                                    value={form.email}
-                                    onChange={e => setForm({ ...form, email: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Teléfono <span className="text-slate-400 font-normal">(Opcional)</span></label>
-                                <input
-                                    value={form.phone}
-                                    onChange={e => setForm({ ...form, phone: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal/20 focus:border-teal outline-none transition-all text-sm"
-                                />
-                            </div>
-                        </div>
-                    </form>
-                </div>
+                    </div>
 
-                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2 rounded-b-2xl">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={saving}
-                        className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-all"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="submit"
-                        form="new-patient-form"
-                        disabled={saving}
-                        className="px-4 py-2 text-sm font-bold text-white bg-teal focus:ring-2 focus:ring-teal/20 focus:border-teal rounded-lg shadow-sm hover:shadow hover:bg-teal-dark transition-all flex items-center gap-2"
-                    >
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {saving ? "Creando..." : "Crear Paciente"}
-                    </button>
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                            <input
+                                type="email"
+                                value={form.email}
+                                onChange={e => setForm({ ...form, email: e.target.value })}
+                                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
+                                placeholder="correo@ejemplo.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-1">Teléfono</label>
+                            <input
+                                type="tel"
+                                value={form.phone}
+                                onChange={e => setForm({ ...form, phone: e.target.value })}
+                                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50"
+                                placeholder="+569XXXXXXXX"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-1">Notas Clínicas</label>
+                        <textarea
+                            value={form.notes}
+                            onChange={e => setForm({ ...form, notes: e.target.value })}
+                            rows={3}
+                            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-teal/50 resize-none"
+                            placeholder="Diagnóstico, alergias, observaciones relevantes..."
+                        />
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={saving}
+                            className="px-4 py-2 text-sm font-medium text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="flex items-center gap-2 bg-gradient-to-r from-teal to-blue-500 text-white px-6 py-2 rounded-xl font-medium shadow-lg hover:shadow-teal/25 transition-all disabled:opacity-50"
+                        >
+                            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {saving ? 'Creando...' : 'Crear Paciente'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );
