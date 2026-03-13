@@ -488,33 +488,15 @@ function MonthCalendarView({
                                 {format(day, "d")}
                             </div>
 
-                            {/* Appointment Count Badge */}
+                            {/* Appointment Count */}
                             {hasAppointments && (
                                 <div className={`
-                                    mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
-                                    transition-all group-hover:scale-105
-                                    ${overdueApts.length > 0
-                                        ? "bg-amber-100 text-amber-700 border border-amber-200"
-                                        : "bg-teal-light text-teal-dark border border-teal/20"
-                                    }
+                                    mt-2 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold
+                                    bg-teal/10 text-teal-dark border border-teal/20
                                 `}>
-                                    <CalendarIcon className="w-3 h-3" />
                                     <span>{dayApts.length}</span>
                                     <span className="hidden sm:inline">{dayApts.length === 1 ? "cita" : "citas"}</span>
                                 </div>
-                            )}
-
-                            {/* Overdue indicator */}
-                            {overdueApts.length > 0 && (
-                                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-600">
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <span>{overdueApts.length} vencida{overdueApts.length > 1 ? "s" : ""}</span>
-                                </div>
-                            )}
-
-                            {/* Empty day subtle indicator */}
-                            {!hasAppointments && isCurrentMonth && (
-                                <div className="mt-2 w-2 h-2 rounded-full bg-slate-200 group-hover:bg-teal-300 transition-colors" />
                             )}
                         </button>
                     );
