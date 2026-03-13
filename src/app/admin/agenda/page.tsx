@@ -540,6 +540,17 @@ function DayView({
         [appointments, date]
     );
 
+    // Group appointments by hour for visual separators (must be before early return for hooks rules)
+    const grouped = useMemo(() => {
+        const map = new Map<number, Appointment[]>();
+        dayAppointments.forEach(apt => {
+            const h = new Date(apt.starts_at).getHours();
+            if (!map.has(h)) map.set(h, []);
+            map.get(h)!.push(apt);
+        });
+        return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+    }, [dayAppointments]);
+
     // Empty state
     if (dayAppointments.length === 0) {
         return (
@@ -562,17 +573,6 @@ function DayView({
             </div>
         );
     }
-
-    // Group appointments by hour for visual separators
-    const grouped = useMemo(() => {
-        const map = new Map<number, Appointment[]>();
-        dayAppointments.forEach(apt => {
-            const h = new Date(apt.starts_at).getHours();
-            if (!map.has(h)) map.set(h, []);
-            map.get(h)!.push(apt);
-        });
-        return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
-    }, [dayAppointments]);
 
     return (
         <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50">
