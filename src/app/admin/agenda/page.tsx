@@ -559,7 +559,7 @@ function DayView({
     return (
         <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50">
             <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-slate-200 py-4 px-6 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
                     {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
                     <span className="text-xs font-bold text-teal-dark bg-teal/10 border border-teal/20 px-2.5 py-0.5 rounded-full">{dayAppointments.length} {dayAppointments.length === 1 ? "cita" : "citas"}</span>
                 </h3>
