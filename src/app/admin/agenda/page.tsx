@@ -260,7 +260,7 @@ export default function AgendaPage() {
         <div className="space-y-4 h-full flex flex-col pt-2">
             {/* Page Title */}
             <div>
-                <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
+                <h1 className="text-lg font-semibold text-teal-dark">
                     Agenda
                 </h1>
             </div>
@@ -320,7 +320,7 @@ export default function AgendaPage() {
                     )}
 
                     {viewMode === "month" && (
-                        <h2 className="text-xl font-bold text-slate-800 capitalize min-w-[200px] ml-2 tracking-tight">
+                        <h2 className="text-base font-semibold text-slate-800 capitalize min-w-[200px] ml-2 tracking-tight">
                             {dateLabel}
                         </h2>
                     )}
@@ -701,7 +701,7 @@ function AppointmentDetail({
                 {/* Header — same style as edit/create */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold text-slate-800">Detalle de Cita</h2>
+                        <h2 className="text-base font-semibold text-slate-800">Detalle de Cita</h2>
                         <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${
                             apt.status === "cancelled"
                                 ? "text-red-600 bg-red-50"
@@ -983,7 +983,7 @@ function AppointmentFormModal({ defaultDate, onClose, onSuccess }: { defaultDate
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-800">Agendar Cita</h2>
+                    <h2 className="text-base font-semibold text-slate-800">Agendar Cita</h2>
                     <button onClick={onClose} disabled={saving} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
@@ -1540,7 +1540,7 @@ function AppointmentEditModal({ appointment: apt, onClose, onSuccess }: {
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-800">Editar Cita</h2>
+                    <h2 className="text-base font-semibold text-slate-800">Editar Cita</h2>
                     <button onClick={onClose} disabled={saving} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
@@ -1697,7 +1697,7 @@ function NewPatientModal({ onClose, onSuccess }: { onClose: () => void, onSucces
         <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
                 <div className="flex justify-between items-center p-5 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-800">Nuevo Paciente</h2>
+                    <h2 className="text-base font-semibold text-slate-800">Nuevo Paciente</h2>
                     <button onClick={onClose} disabled={saving} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                         <X className="w-5 h-5" />
                     </button>

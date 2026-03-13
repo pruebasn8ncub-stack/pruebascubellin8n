@@ -110,7 +110,7 @@ export default function SchedulesPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
+                    <h1 className="text-lg font-semibold text-teal-dark">
                         Horarios Profesionales
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Define los bloques de disponibilidad semanal de cada kinesióloga.</p>
@@ -213,7 +213,7 @@ export default function SchedulesPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
                     <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className="flex justify-between items-center p-5 border-b border-slate-100">
-                            <h2 className="text-xl font-bold text-slate-800">Nuevo Bloque de Horario</h2>
+                            <h2 className="text-base font-semibold text-slate-800">Nuevo Bloque de Horario</h2>
                             <button onClick={() => setIsModalOpen(false)} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>

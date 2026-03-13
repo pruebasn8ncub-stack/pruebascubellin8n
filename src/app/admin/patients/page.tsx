@@ -113,7 +113,7 @@ export default function PatientsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
+                    <h1 className="text-lg font-semibold text-teal-dark">
                         Pacientes
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">{patients.length} paciente(s) registrado(s)</p>
@@ -217,7 +217,7 @@ export default function PatientsPage() {
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
                     <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h2 className="text-xl font-bold text-slate-800">
+                            <h2 className="text-base font-semibold text-slate-800">
                                 {editingPatient ? 'Editar Paciente' : 'Nuevo Paciente'}
                             </h2>
                             <button onClick={handleCloseModal} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">

@@ -122,7 +122,7 @@ export default function AdminDashboard() {
             <div className="container mx-auto px-4 py-8 relative z-10">
                 <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white border border-slate-200 rounded-3xl p-6 mb-12 shadow-2xl">
                     <div>
-                        <h1 className="text-xl font-black text-slate-800">Portal Administrativo</h1>
+                        <h1 className="text-lg font-semibold text-teal-dark">Portal Administrativo</h1>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
                 </header>
 
                 <div className="mb-10 text-center md:text-left">
-                    <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight mb-2">Herramientas del Sistema</h2>
+                    <h2 className="text-lg font-semibold text-slate-800 tracking-tight mb-2">Herramientas del Sistema</h2>
                     <p className="text-slate-500 text-lg">Selecciona la aplicación a la que deseas acceder</p>
                 </div>
 

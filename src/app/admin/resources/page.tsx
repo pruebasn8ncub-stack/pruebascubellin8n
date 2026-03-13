@@ -106,7 +106,7 @@ export default function ResourcesPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold font-head text-transparent bg-clip-text bg-gradient-to-r from-teal to-blue-400">
+                <h1 className="text-lg font-semibold text-teal-dark">
                     Recursos Físicos
                 </h1>
                 <div className="flex gap-4">
@@ -202,7 +202,7 @@ export default function ResourcesPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm ">
                     <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className="flex justify-between items-center p-4 border-b border-slate-100">
-                            <h2 className="text-xl font-bold text-slate-800">
+                            <h2 className="text-base font-semibold text-slate-800">
                                 {editingResource ? 'Editar Recurso' : 'Nuevo Recurso Físico'}
                             </h2>
                             <button onClick={handleCloseModal} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg hover:bg-white transition-colors">
