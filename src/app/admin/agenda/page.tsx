@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
     Loader2, Calendar as CalendarIcon, Clock, User, ChevronLeft, ChevronRight,
     Filter, UserCircle, AlertTriangle, ArrowLeft, List, LayoutGrid, CalendarDays,
-    Activity, ClipboardList, Phone, Mail, Plus, X, Save, Pencil,
+    Activity, ClipboardList, Phone, Mail, Plus, X, Save, Pencil, Trash2,
     Users, Briefcase, UserCog, ChevronDown, ChevronUp, Search
 } from "lucide-react";
 import {
@@ -175,6 +175,9 @@ export default function AgendaPage() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [editingFromList, setEditingFromList] = useState<Appointment | null>(null);
+    const [deletingFromList, setDeletingFromList] = useState<Appointment | null>(null);
+    const [deletingFromListLoading, setDeletingFromListLoading] = useState(false);
 
     // Always fetch full month range so monthly view has all data
     const dateRange = useMemo(() => {
@@ -258,86 +261,37 @@ export default function AgendaPage() {
 
     return (
         <div className="space-y-4 h-full flex flex-col pt-2">
-            {/* Page Title */}
-            <div>
-                <h1 className="text-lg font-semibold text-teal-dark">
-                    Agenda
-                </h1>
-            </div>
 
-            {/* Toolbar */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white border border-slate-200 p-4 rounded-[20px] shadow-sm ">
-                <div className="flex flex-wrap items-center gap-2">
-                    {viewMode === "day" ? (
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setViewMode("month")}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal to-blue-500 text-white shadow-md hover:shadow-lg hover:opacity-90 transition-all text-sm font-semibold mr-2"
-                                title="Volver al Mes"
-                            >
-                                <ArrowLeft className="w-4 h-4" />
-                                <span className="hidden sm:inline">Volver al Calendario</span>
-                            </button>
 
-                            <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200">
-                                <button
-                                    onClick={() => setSelectedDate(prev => subDays(prev, 1))}
-                                    className="p-1.5 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-500 hover:text-slate-800"
-                                    title="Día anterior"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={goToToday}
-                                    className="px-3 py-1.5 text-xs font-bold rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-500 hover:text-teal"
-                                    title="Ir a hoy"
-                                >
-                                    Hoy
-                                </button>
-                                <button
-                                    onClick={() => setSelectedDate(prev => addDays(prev, 1))}
-                                    className="p-1.5 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-500 hover:text-slate-800"
-                                    title="Día siguiente"
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <button onClick={goBack} className="p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-300 hover:text-slate-800" title="Mes anterior">
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            {!isCurrentPeriod && (
-                                <button onClick={goToToday} className="px-3 py-1.5 text-xs font-bold rounded-lg bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-colors capitalize">
-                                    {format(new Date(), "MMMM", { locale: es })}
-                                </button>
-                            )}
-                            <button onClick={goForward} className="p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-slate-300 hover:text-slate-800" title="Mes siguiente">
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </>
-                    )}
-
-                    {viewMode === "month" && (
-                        <h2 className="text-base font-semibold text-slate-800 capitalize min-w-[200px] ml-2 tracking-tight">
-                            {dateLabel}
-                        </h2>
-                    )}
-                </div>
-
-                {/* Filter & Actions */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <button
-                        onClick={() => setIsFormModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal to-blue-500 text-white rounded-xl shadow-md hover:shadow-lg hover:opacity-90 transition-all font-semibold text-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">Nueva Cita</span>
+            {/* Toolbar (month view only) */}
+            {viewMode === "month" && (
+            <div className="flex items-center justify-between gap-4 bg-white border border-slate-200 py-4 px-5 rounded-[20px] shadow-sm">
+                <div className="flex items-center gap-2">
+                    <button onClick={goBack} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm" title="Mes anterior">
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
-
+                    {!isCurrentPeriod && (
+                        <button onClick={goToToday} className="px-3.5 py-1.5 text-sm font-semibold rounded-xl bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-all shadow-sm capitalize">
+                            {format(new Date(), "MMMM", { locale: es })}
+                        </button>
+                    )}
+                    <button onClick={goForward} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm" title="Mes siguiente">
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                    <h2 className="text-base font-bold text-slate-800 capitalize min-w-[200px] ml-2 tracking-tight">
+                        {dateLabel}
+                    </h2>
                 </div>
+
+                <button
+                    onClick={() => setIsFormModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal to-blue-500 text-white text-sm font-semibold hover:shadow-lg hover:opacity-90 transition-all shadow-md flex-shrink-0"
+                >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Nueva Cita</span>
+                </button>
             </div>
+            )}
 
             {error && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-2xl flex items-center gap-3">
@@ -367,6 +321,13 @@ export default function AgendaPage() {
                         date={selectedDate}
                         appointments={filteredAppointments}
                         onSelectAppointment={setSelectedAppointment}
+                        onEditAppointment={setEditingFromList}
+                        onDeleteAppointment={setDeletingFromList}
+                        onPrevDay={() => setSelectedDate(prev => subDays(prev, 1))}
+                        onNextDay={() => setSelectedDate(prev => addDays(prev, 1))}
+                        onGoToday={goToToday}
+                        onBackToMonth={() => setViewMode("month")}
+                        onNewAppointment={() => setIsFormModalOpen(true)}
                     />
                 )}
             </div>
@@ -395,6 +356,50 @@ export default function AgendaPage() {
                         fetchAppointments(dateRange.start, dateRange.end);
                     }}
                 />
+            )}
+
+            {/* Edit from day list */}
+            {editingFromList && (
+                <AppointmentEditModal
+                    appointment={editingFromList}
+                    onClose={() => setEditingFromList(null)}
+                    onSuccess={() => {
+                        setEditingFromList(null);
+                        fetchAppointments(dateRange.start, dateRange.end);
+                    }}
+                />
+            )}
+
+            {/* Delete from day list */}
+            {deletingFromList && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+                        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+                            <Trash2 className="w-7 h-7 text-red-500" />
+                        </div>
+                        <h3 className="text-base font-semibold text-slate-800 mb-1">¿Eliminar esta cita?</h3>
+                        <p className="text-sm text-slate-500 mb-6">
+                            {deletingFromList.patients?.full_name} — {deletingFromList.services?.name}<br/>
+                            Esta acción es irreversible.
+                        </p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setDeletingFromList(null)} disabled={deletingFromListLoading} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancelar</button>
+                            <button
+                                disabled={deletingFromListLoading}
+                                onClick={async () => {
+                                    setDeletingFromListLoading(true);
+                                    await supabase.from('appointments').delete().eq('id', deletingFromList.id);
+                                    setDeletingFromListLoading(false);
+                                    setDeletingFromList(null);
+                                    fetchAppointments(dateRange.start, dateRange.end);
+                                }}
+                                className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+                            >
+                                {deletingFromListLoading ? 'Eliminando...' : 'Sí, eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -510,10 +515,24 @@ function DayView({
     date,
     appointments,
     onSelectAppointment,
+    onEditAppointment,
+    onDeleteAppointment,
+    onPrevDay,
+    onNextDay,
+    onGoToday,
+    onBackToMonth,
+    onNewAppointment,
 }: {
     date: Date;
     appointments: Appointment[];
     onSelectAppointment: (a: Appointment) => void;
+    onEditAppointment: (a: Appointment) => void;
+    onDeleteAppointment: (a: Appointment) => void;
+    onPrevDay: () => void;
+    onNextDay: () => void;
+    onGoToday: () => void;
+    onBackToMonth: () => void;
+    onNewAppointment: () => void;
 }) {
     const dayAppointments = useMemo(() =>
         appointments
@@ -537,11 +556,37 @@ function DayView({
     if (dayAppointments.length === 0) {
         return (
             <div className="h-full flex flex-col bg-slate-50">
-                <div className="sticky top-0 z-40 bg-white/90 border-b border-slate-200 py-4 px-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-800">
-                        {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
-                    </h3>
-
+                <div className="sticky top-0 z-40 bg-white border-b border-slate-200 py-4 px-5 shadow-sm flex items-center justify-between gap-3">
+                    <button onClick={onBackToMonth} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all text-sm font-medium flex-shrink-0 shadow-sm" title="Volver al Mes">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="hidden sm:inline">Volver</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={onPrevDay} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        {!isToday(date) && (
+                            <button onClick={onGoToday} className="px-3.5 py-1.5 text-sm font-semibold rounded-xl bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-all shadow-sm">
+                                Hoy
+                            </button>
+                        )}
+                        <div className="flex items-center gap-3 px-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-extrabold text-slate-800 leading-none">{format(date, 'd')}</span>
+                                <div className="flex flex-col -space-y-0.5">
+                                    <span className="text-xs font-bold text-teal uppercase tracking-wider">{format(date, 'EEEE', { locale: es })}</span>
+                                    <span className="text-xs text-slate-400 font-medium capitalize">{format(date, "MMMM yyyy", { locale: es })}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onClick={onNextDay} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <button onClick={onNewAppointment} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal to-blue-500 text-white text-sm font-semibold hover:shadow-lg hover:opacity-90 transition-all flex-shrink-0 shadow-md">
+                        <Plus className="w-4 h-4" />
+                        <span className="hidden sm:inline">Nueva Cita</span>
+                    </button>
                 </div>
                 <div className="flex-1 flex flex-col items-center justify-center p-8">
                     <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center max-w-sm text-center">
@@ -558,12 +603,38 @@ function DayView({
 
     return (
         <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50">
-            <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-sm border-b border-slate-200 py-4 px-6 shadow-sm">
-                <h3 className="text-sm font-medium text-slate-800 flex items-center gap-2">
-                    {isToday(date) ? "Agenda de Hoy" : format(date, "EEEE, d 'de' MMMM", { locale: es })}
-                    <span className="text-xs font-bold text-teal-dark bg-teal/10 border border-teal/20 px-2.5 py-0.5 rounded-full">{dayAppointments.length} {dayAppointments.length === 1 ? "cita" : "citas"}</span>
-                </h3>
-
+            <div className="sticky top-0 z-40 bg-white backdrop-blur-sm border-b border-slate-200 py-4 px-5 shadow-sm flex items-center justify-between gap-3">
+                <button onClick={onBackToMonth} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all text-sm font-medium flex-shrink-0 shadow-sm" title="Volver al Mes">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Volver</span>
+                </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={onPrevDay} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm">
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {!isToday(date) && (
+                        <button onClick={onGoToday} className="px-3.5 py-1.5 text-sm font-semibold rounded-xl bg-teal/10 text-teal border border-teal/20 hover:bg-teal/20 transition-all shadow-sm">
+                            Hoy
+                        </button>
+                    )}
+                    <div className="flex items-center gap-3 px-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl font-extrabold text-slate-800 leading-none">{format(date, 'd')}</span>
+                            <div className="flex flex-col -space-y-0.5">
+                                <span className="text-xs font-bold text-teal uppercase tracking-wider">{format(date, 'EEEE', { locale: es })}</span>
+                                <span className="text-xs text-slate-400 font-medium capitalize">{format(date, "MMMM yyyy", { locale: es })}</span>
+                            </div>
+                        </div>
+                        <span className="text-xs font-bold text-teal-dark bg-teal/10 border border-teal/20 px-3 py-1 rounded-full">{dayAppointments.length} {dayAppointments.length === 1 ? "cita" : "citas"}</span>
+                    </div>
+                    <button onClick={onNextDay} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all text-slate-500 hover:text-slate-800 shadow-sm">
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+                <button onClick={onNewAppointment} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal to-blue-500 text-white text-sm font-semibold hover:shadow-lg hover:opacity-90 transition-all flex-shrink-0 shadow-md">
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Nueva Cita</span>
+                </button>
             </div>
 
             <div className="p-4 md:p-6 space-y-1">
@@ -631,7 +702,25 @@ function DayView({
                                             </span>
                                         )}
 
-                                        {/* Chevron */}
+                                        {/* Actions */}
+                                        <div className="hidden group-hover:flex items-center gap-1 flex-shrink-0">
+                                            <span
+                                                role="button"
+                                                onClick={(e) => { e.stopPropagation(); onEditAppointment(apt); }}
+                                                className="p-1.5 rounded-lg hover:bg-teal/10 text-slate-400 hover:text-teal transition-colors cursor-pointer"
+                                                title="Editar cita"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                            </span>
+                                            <span
+                                                role="button"
+                                                onClick={(e) => { e.stopPropagation(); onDeleteAppointment(apt); }}
+                                                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                title="Eliminar cita"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </span>
+                                        </div>
                                         <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 flex-shrink-0 transition-colors" />
                                     </button>
                                 );
@@ -1698,7 +1787,7 @@ function NewPatientModal({ onClose, onSuccess }: { onClose: () => void, onSucces
             <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
                 <div className="flex justify-between items-center p-5 border-b border-slate-100">
                     <h2 className="text-base font-semibold text-slate-800">Nuevo Paciente</h2>
-                    <button onClick={onClose} disabled={saving} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
+                        <button onClick={onClose} disabled={saving} className="p-1 text-slate-800/50 hover:text-slate-800 rounded-lg transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
