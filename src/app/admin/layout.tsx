@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Loader2, LayoutDashboard, CalendarDays, Users, UserCog, Briefcase, Box, Clock, CalendarOff, LogOut } from "lucide-react";
+import { Loader2, LayoutDashboard, CalendarDays, Users, UserCog, Briefcase, Box, Clock, CalendarOff, LogOut, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -47,6 +47,7 @@ export default function AdminLayout({
         { name: "Recursos Físicos", href: "/admin/resources", icon: Box },
         { name: "Horarios Profesionales", href: "/admin/schedules", icon: Clock },
         { name: "Excepciones", href: "/admin/exceptions", icon: CalendarOff },
+        { name: "WhatsApp", href: "/admin/whatsapp", icon: MessageCircle },
     ];
 
     const handleSignOut = async () => {
@@ -55,6 +56,7 @@ export default function AdminLayout({
     }
 
     const isDashboard = pathname === "/admin/dashboard";
+    const isWhatsApp = pathname?.startsWith("/admin/whatsapp");
 
     return (
         <div className="min-h-screen flex bg-slate-50">
@@ -98,7 +100,7 @@ export default function AdminLayout({
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col min-h-screen overflow-hidden bg-slate-50 text-slate-800">
-                <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                <div className={cn("flex-1", isWhatsApp ? "overflow-hidden" : "overflow-y-auto p-4 md:p-8")}>
                     {children}
                 </div>
             </main>
