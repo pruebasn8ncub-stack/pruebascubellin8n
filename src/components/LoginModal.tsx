@@ -64,28 +64,24 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ type: "spring", duration: 0.5 }}
-                            className="w-full max-w-md bg-navy rounded-[2.5rem] relative overflow-hidden shadow-2xl pointer-events-auto border border-white/10"
+                            className="w-full max-w-md bg-white rounded-[2.5rem] relative overflow-hidden shadow-2xl pointer-events-auto border border-gray-200"
                         >
-                            {/* Decorative background elements inside modal */}
-                            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-cyan/10 blur-[80px] rounded-full"></div>
-                            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/10 blur-[80px] rounded-full"></div>
-
                             <button
                                 onClick={onClose}
-                                className="absolute top-6 right-6 p-2 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors z-20"
+                                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-20"
                             >
                                 <X className="h-5 w-5" />
                             </button>
 
                             <div className="p-8 md:p-10 relative z-10">
                                 <div className="mb-8 flex justify-center">
-                                    <div className="bg-white p-3 rounded-2xl shadow-xl">
+                                    <div className="p-3">
                                         <Image
                                             src="/images/logo_innovakine.png"
                                             alt="Innovakine Logo"
                                             width={150}
                                             height={40}
-                                            className="object-contain mix-blend-multiply"
+                                            className="object-contain"
                                             priority
                                         />
                                     </div>
@@ -95,8 +91,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <div className="w-14 h-14 bg-gradient-to-br from-cyan to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-cyan/20">
                                         <Lock className="h-7 w-7 text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-black text-white tracking-tight">Acceso Privado</h2>
-                                    <p className="text-blue-100/60 text-sm mt-2">Portal exclusivo para especialistas</p>
+                                    <h2 className="text-2xl font-black text-gray-800 tracking-tight">Acceso Privado</h2>
+                                    <p className="text-gray-500 text-sm mt-2">Portal exclusivo para especialistas</p>
                                 </div>
 
                                 <form onSubmit={handleLogin} className="space-y-5">
@@ -104,7 +100,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="bg-red-500/10 border border-red-500/50 text-red-200 text-sm p-4 rounded-xl text-center"
+                                            className="bg-red-50 border border-red-200 text-red-600 text-sm p-4 rounded-xl text-center"
                                         >
                                             Credenciales incorrectas.
                                         </motion.div>
@@ -114,7 +110,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                         <div>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <Mail className="h-5 w-5 text-blue-100/40" />
+                                                    <Mail className="h-5 w-5 text-gray-400" />
                                                 </div>
                                                 <input
                                                     id="email"
@@ -122,7 +118,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                                     required
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-blue-100/30 focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent transition-all"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3.5 pl-11 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent transition-all"
                                                     placeholder="Correo Electrónico"
                                                 />
                                             </div>
@@ -131,7 +127,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                         <div>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <Lock className="h-5 w-5 text-blue-100/40" />
+                                                    <Lock className="h-5 w-5 text-gray-400" />
                                                 </div>
                                                 <input
                                                     id="password"
@@ -139,7 +135,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                                     required
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-white placeholder:text-blue-100/30 focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent transition-all"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3.5 pl-11 pr-4 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent transition-all"
                                                     placeholder="Contraseña"
                                                 />
                                             </div>
