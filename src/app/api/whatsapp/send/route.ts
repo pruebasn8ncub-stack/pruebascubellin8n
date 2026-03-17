@@ -119,7 +119,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         media_url: mediaUrl ?? null,
         media_mime_type: null,
         message_type: mediaType ? `${mediaType}Message` : 'conversation',
-        status: 'delivered',
+        status: 'sent',
         from_me: true,
       })
       .select('id')

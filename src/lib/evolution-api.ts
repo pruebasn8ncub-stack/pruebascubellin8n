@@ -257,6 +257,54 @@ export function extractMediaInfo(
 }
 
 // ---------------------------------------------------------------------------
+// Media download
+// ---------------------------------------------------------------------------
+
+/**
+ * Download media content as a base64 data URI via Evolution API.
+ *
+ * Useful for stickers and other media where the raw WhatsApp URL is encrypted
+ * and not directly accessible from the browser.
+ *
+ * @returns A data URI string (e.g. "data:image/webp;base64,...") or null on failure.
+ */
+export async function getMediaBase64(
+  messageId: string,
+  remoteJid: string,
+  fromMe: boolean
+): Promise<string | null> {
+  try {
+    const instance = getEnv('EVOLUTION_INSTANCE_NAME');
+    const response = await evolutionFetch(
+      `/chat/getBase64FromMediaMessage/${instance}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          message: {
+            key: { id: messageId, remoteJid, fromMe },
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as Record<string, unknown>;
+    const base64 = data.base64;
+    if (typeof base64 !== 'string' || !base64) return null;
+
+    // Evolution API returns raw base64 without data URI prefix
+    // Strip codec params (e.g. "audio/ogg; codecs=opus" → "audio/ogg")
+    // because semicolons break data URI parsing
+    const rawMime = (data.mimetype as string) ?? 'image/webp';
+    const mimeType = rawMime.split(';')[0].trim();
+    return `data:${mimeType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // JID utilities
 // ---------------------------------------------------------------------------
 

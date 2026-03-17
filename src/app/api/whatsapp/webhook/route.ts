@@ -15,6 +15,7 @@ import {
   parseJidToPhone,
   sendTextMessage,
   fetchProfilePicture,
+  getMediaBase64,
 } from '@/lib/evolution-api';
 import type { WhatsAppConversation, WhatsAppBotSettings } from '@/types/whatsapp';
 
@@ -167,7 +168,8 @@ async function handleMessagesUpsert(
   if (!key) return;
 
   const fromMe = Boolean(key.fromMe);
-  const jid = typeof key.remoteJid === 'string' ? key.remoteJid : '';
+  const rawJid = typeof key.remoteJid === 'string' ? key.remoteJid : '';
+  const remoteJidAlt = typeof key.remoteJidAlt === 'string' ? key.remoteJidAlt : '';
   const waMessageId = typeof key.id === 'string' ? key.id : '';
   const pushName = typeof data.pushName === 'string' ? data.pushName : undefined;
   const rawMessage =
@@ -178,8 +180,10 @@ async function handleMessagesUpsert(
       : {};
 
   // Ignore group messages
-  if (jid.includes('@g.us')) return;
+  if (rawJid.includes('@g.us')) return;
 
+  // Use remoteJidAlt (real phone JID) when remoteJid is a LID (@lid format)
+  const jid = rawJid.endsWith('@lid') && remoteJidAlt ? remoteJidAlt : rawJid;
   const phone = parseJidToPhone(jid);
 
   // Respect testing filter
@@ -190,7 +194,16 @@ async function handleMessagesUpsert(
   const messageType =
     mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
 
-  const conversation = await findOrCreateConversation(jid, phone, pushName);
+  // Download media as base64 since WhatsApp encrypted URLs are not browser-accessible
+  if (mediaInfo.mediaType && waMessageId && jid) {
+    const dataUri = await getMediaBase64(waMessageId, rawJid, fromMe);
+    if (dataUri) {
+      mediaInfo.mediaUrl = dataUri;
+    }
+  }
+
+  // Only use pushName for incoming messages — for outgoing (fromMe), pushName is our own name
+  const conversation = await findOrCreateConversation(jid, phone, fromMe ? undefined : pushName);
 
   if (!fromMe) {
     // ── Incoming client message ──────────────────────────────────────────────
@@ -337,12 +350,13 @@ async function handleMessagesUpsert(
 async function handleMessagesUpdate(
   data: Record<string, unknown>
 ): Promise<void> {
+  // Evolution API v2 sends keyId directly, not nested in key.id
   const key = data.key as Record<string, unknown> | undefined;
-  if (!key) return;
+  const waMessageId =
+    (typeof data.keyId === 'string' ? data.keyId : '') ||
+    (key && typeof key.id === 'string' ? key.id : '');
 
-  const waMessageId = typeof key.id === 'string' ? key.id : '';
-
-  // Status can be in data.status, data.update.status, or data.update
+  // Status can be at data.status, data.update.status, or nested in key
   const update = data.update as Record<string, unknown> | undefined;
   const rawStatus = data.status ?? update?.status ?? update;
 

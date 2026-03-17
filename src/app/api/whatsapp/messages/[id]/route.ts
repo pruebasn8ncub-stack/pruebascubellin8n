@@ -58,7 +58,32 @@ export async function GET(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const authUser = await getAuthUser(request);
+    const conversationId = params.id;
+    const searchParams = request.nextUrl.searchParams;
+    const before = searchParams.get('before') ?? '';
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10))
+    );
+
+    // Build message query
+    let query = supabaseAdmin
+      .from('whatsapp_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (before.trim()) {
+      query = query.lt('created_at', before.trim());
+    }
+
+    // Run auth and message query in parallel
+    const [authUser, { data: messages, error }] = await Promise.all([
+      getAuthUser(request),
+      query,
+    ]);
+
     if (!authUser) {
       return NextResponse.json(
         ApiResponseBuilder.error('Unauthorized', 'UNAUTHORIZED', 401),
@@ -72,27 +97,6 @@ export async function GET(
         { status: 403 }
       );
     }
-
-    const conversationId = params.id;
-    const searchParams = request.nextUrl.searchParams;
-    const before = searchParams.get('before') ?? '';
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10))
-    );
-
-    let query = supabaseAdmin
-      .from('whatsapp_messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (before.trim()) {
-      query = query.lt('created_at', before.trim());
-    }
-
-    const { data: messages, error } = await query;
 
     if (error) {
       return NextResponse.json(

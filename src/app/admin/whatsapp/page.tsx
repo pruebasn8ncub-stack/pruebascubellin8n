@@ -144,28 +144,27 @@ export default function WhatsAppPage() {
         }
 
         const fetchMessages = async () => {
-            const res = await apiFetch(
-                `/api/whatsapp/messages/${selectedId}?limit=50`
+            // Optimistically clear unread count immediately
+            setConversations((prev) =>
+                prev.map((c) =>
+                    c.id === selectedId ? { ...c, unread_count: 0 } : c
+                )
             );
+
+            // Fetch messages and mark-read in parallel
+            const [res] = await Promise.all([
+                apiFetch(`/api/whatsapp/messages/${selectedId}?limit=30`),
+                apiFetch("/api/whatsapp/mark-read", {
+                    method: "POST",
+                    body: JSON.stringify({ conversationId: selectedId }),
+                }),
+            ]);
 
             if (res.ok) {
                 const json: MessagesResponse = await res.json();
                 setMessages(json.data.messages);
                 setHasMore(json.data.hasMore);
             }
-
-            // Mark as read
-            await apiFetch("/api/whatsapp/mark-read", {
-                method: "POST",
-                body: JSON.stringify({ conversationId: selectedId }),
-            });
-
-            // Optimistically update local unread count
-            setConversations((prev) =>
-                prev.map((c) =>
-                    c.id === selectedId ? { ...c, unread_count: 0 } : c
-                )
-            );
         };
 
         fetchMessages();
@@ -351,10 +350,11 @@ export default function WhatsAppPage() {
 
         if (res.ok) {
             playOutgoingSound();
-            // Replace optimistic message with "delivered" status (double tick)
+            // Replace optimistic message with "sent" status (single tick)
+            // Double tick (delivered) and blue ticks (read) come from webhook updates
             setMessages((prev) =>
                 prev.map((m) =>
-                    m.id === tempId ? { ...m, status: "delivered" } : m
+                    m.id === tempId ? { ...m, status: "sent" } : m
                 )
             );
         } else {
@@ -476,9 +476,7 @@ export default function WhatsAppPage() {
                     isLoadingMore={isLoadingMore}
                 />
             ) : (
-                <div className="flex-1 overflow-hidden">
-                    <EmptyChat />
-                </div>
+                <EmptyChat />
             )}
         </div>
     );

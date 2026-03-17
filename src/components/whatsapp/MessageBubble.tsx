@@ -1,6 +1,7 @@
 "use client";
 
-import { FileText, Clock, X } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { FileText, Clock, X, Play, Pause, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppMessage, SenderType } from "@/types/whatsapp";
 
@@ -13,6 +14,12 @@ function formatTimestamp(ts: string): string {
     const h = date.getHours().toString().padStart(2, "0");
     const m = date.getMinutes().toString().padStart(2, "0");
     return `${h}:${m}`;
+}
+
+function formatDuration(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 // Single check SVG (WhatsApp style)
@@ -76,6 +83,108 @@ function DeliveryTicks({ status }: { status: WhatsAppMessage["status"] }) {
     return null;
 }
 
+// Custom WhatsApp-style audio player
+function AudioPlayer({ src, isFromMe }: { src: string; isFromMe: boolean }) {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+
+    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const onLoaded = () => setDuration(audio.duration);
+        const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const onEnded = () => { setIsPlaying(false); setCurrentTime(0); };
+
+        audio.addEventListener("loadedmetadata", onLoaded);
+        audio.addEventListener("timeupdate", onTimeUpdate);
+        audio.addEventListener("ended", onEnded);
+
+        return () => {
+            audio.removeEventListener("loadedmetadata", onLoaded);
+            audio.removeEventListener("timeupdate", onTimeUpdate);
+            audio.removeEventListener("ended", onEnded);
+        };
+    }, []);
+
+    const togglePlay = useCallback(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (isPlaying) {
+            audio.pause();
+        } else {
+            audio.play();
+        }
+        setIsPlaying(!isPlaying);
+    }, [isPlaying]);
+
+    const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const audio = audioRef.current;
+        if (!audio || !duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        audio.currentTime = pct * duration;
+        setCurrentTime(audio.currentTime);
+    }, [duration]);
+
+    const accentColor = isFromMe ? "bg-teal" : "bg-[#5e7a9a]";
+    const trackBg = isFromMe ? "bg-teal/20" : "bg-[#5e7a9a]/20";
+
+    return (
+        <div className="flex items-center gap-3 min-w-[220px]">
+            <audio ref={audioRef} src={src} preload="metadata" />
+
+            {/* Play/Pause button */}
+            <button
+                onClick={togglePlay}
+                className={cn(
+                    "flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors",
+                    isFromMe
+                        ? "bg-teal text-white hover:bg-teal/90"
+                        : "bg-[#5e7a9a] text-white hover:bg-[#5e7a9a]/90"
+                )}
+            >
+                {isPlaying ? (
+                    <Pause className="w-4 h-4" fill="currentColor" />
+                ) : (
+                    <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+                )}
+            </button>
+
+            {/* Progress bar + duration */}
+            <div className="flex-1 flex flex-col gap-1">
+                <div
+                    className={cn("relative h-1.5 rounded-full cursor-pointer", trackBg)}
+                    onClick={handleSeek}
+                >
+                    <div
+                        className={cn("absolute left-0 top-0 h-full rounded-full transition-all", accentColor)}
+                        style={{ width: `${progress}%` }}
+                    />
+                    <div
+                        className={cn("absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-sm transition-all", accentColor)}
+                        style={{ left: `calc(${progress}% - 6px)` }}
+                    />
+                </div>
+                <span className="text-[0.6rem] text-black/40 tabular-nums">
+                    {isPlaying || currentTime > 0
+                        ? formatDuration(currentTime)
+                        : duration > 0
+                            ? formatDuration(duration)
+                            : "0:00"}
+                </span>
+            </div>
+
+            {/* Mic icon */}
+            <Mic className={cn("w-4 h-4 flex-shrink-0", isFromMe ? "text-teal/40" : "text-[#5e7a9a]/40")} />
+        </div>
+    );
+}
+
 function MediaContent({ message }: { message: WhatsAppMessage }) {
     if (!message.media_type || !message.media_url) return null;
 
@@ -100,11 +209,9 @@ function MediaContent({ message }: { message: WhatsAppMessage }) {
     }
     if (message.media_type === "audio") {
         return (
-            <audio
-                src={message.media_url}
-                controls
-                className="w-full mb-1"
-            />
+            <div className="mb-1">
+                <AudioPlayer src={message.media_url} isFromMe={message.from_me} />
+            </div>
         );
     }
     if (message.media_type === "sticker") {
