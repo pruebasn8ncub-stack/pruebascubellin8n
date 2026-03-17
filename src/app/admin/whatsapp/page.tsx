@@ -217,7 +217,11 @@ export default function WhatsAppPage() {
                 }
             )
             .subscribe((status) => {
-                setRealtimeConnected(status === "SUBSCRIBED");
+                if (status === "SUBSCRIBED") {
+                    setRealtimeConnected(true);
+                } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                    setRealtimeConnected(false);
+                }
             });
 
         // 2. Conversation updates (new conversations, bot pause changes, etc.)
