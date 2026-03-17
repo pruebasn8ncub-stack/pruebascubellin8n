@@ -258,7 +258,7 @@ async function handleMessagesUpsert(
             media_url: null,
             media_mime_type: null,
             message_type: 'conversation',
-            status: 'sent',
+            status: 'delivered',
             from_me: true,
           });
 

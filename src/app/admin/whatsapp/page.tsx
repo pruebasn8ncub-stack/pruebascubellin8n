@@ -351,10 +351,10 @@ export default function WhatsAppPage() {
 
         if (res.ok) {
             playOutgoingSound();
-            // Replace optimistic message with "sent" status
+            // Replace optimistic message with "delivered" status (double tick)
             setMessages((prev) =>
                 prev.map((m) =>
-                    m.id === tempId ? { ...m, status: "sent" } : m
+                    m.id === tempId ? { ...m, status: "delivered" } : m
                 )
             );
         } else {
