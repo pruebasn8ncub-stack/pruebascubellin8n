@@ -1,6 +1,6 @@
 export type SenderType = 'client' | 'bot' | 'admin' | 'system';
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
-export type MediaType = 'image' | 'video' | 'audio' | 'document';
+export type MediaType = 'image' | 'video' | 'audio' | 'document' | 'sticker';
 
 export interface WhatsAppConversation {
   id: string;

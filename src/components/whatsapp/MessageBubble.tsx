@@ -107,6 +107,16 @@ function MediaContent({ message }: { message: WhatsAppMessage }) {
             />
         );
     }
+    if (message.media_type === "sticker") {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={message.media_url}
+                alt="sticker"
+                className="w-36 h-36 object-contain"
+            />
+        );
+    }
     if (message.media_type === "document") {
         const filename = message.media_url.split("/").pop() ?? "documento";
         return (
@@ -174,13 +184,17 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         );
     }
 
+    // Stickers render without bubble background
+    const isSticker = message.media_type === "sticker";
+
     return (
         <div className={cn("flex my-1", config.align)}>
             <div
                 className={cn(
-                    "max-w-[70%] px-3 py-2",
-                    config.bubble,
-                    config.roundedClass,
+                    "max-w-[70%]",
+                    isSticker ? "p-1" : "px-3 py-2",
+                    !isSticker && config.bubble,
+                    !isSticker && config.roundedClass,
                     isFailed && "ring-2 ring-red-200"
                 )}
             >

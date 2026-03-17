@@ -223,6 +223,7 @@ export function extractMediaInfo(
     { key: 'videoMessage', type: 'video' },
     { key: 'audioMessage', type: 'audio' },
     { key: 'documentMessage', type: 'document' },
+    { key: 'stickerMessage', type: 'sticker' },
   ];
 
   for (const { key, type } of mediaChecks) {
