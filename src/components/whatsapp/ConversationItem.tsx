@@ -100,16 +100,24 @@ export default function ConversationItem({
                     : "bg-white hover:bg-[#f5f6f6] border-l-[3px] border-l-transparent"
             )}
         >
-            {/* Avatar with deterministic color */}
-            <div
-                className={cn(
-                    "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
-                    "text-white font-semibold text-sm select-none",
-                    avatarColor
-                )}
-            >
-                {initials || "?"}
-            </div>
+            {/* Avatar */}
+            {conversation.contact_avatar_url ? (
+                <img
+                    src={conversation.contact_avatar_url}
+                    alt={conversation.contact_name}
+                    className="flex-shrink-0 w-12 h-12 rounded-full object-cover"
+                />
+            ) : (
+                <div
+                    className={cn(
+                        "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
+                        "text-white font-semibold text-sm select-none",
+                        avatarColor
+                    )}
+                >
+                    {initials || "?"}
+                </div>
+            )}
 
             {/* Body */}
             <div className="flex-1 min-w-0">

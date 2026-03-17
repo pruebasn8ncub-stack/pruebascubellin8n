@@ -113,9 +113,17 @@ export default function ChatPanel({
             {/* Header */}
             <div className="flex items-center justify-between gap-4 bg-white border-b border-slate-200 px-5 py-3 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-semibold text-sm flex-shrink-0 select-none">
-                        {initials || "?"}
-                    </div>
+                    {conversation.contact_avatar_url ? (
+                        <img
+                            src={conversation.contact_avatar_url}
+                            alt={conversation.contact_name}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-semibold text-sm flex-shrink-0 select-none">
+                            {initials || "?"}
+                        </div>
+                    )}
                     <div>
                         <p className="font-semibold text-sm text-[#0d1f35] leading-tight">
                             {conversation.contact_name}

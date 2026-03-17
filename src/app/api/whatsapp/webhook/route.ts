@@ -14,6 +14,7 @@ import {
   extractMediaInfo,
   parseJidToPhone,
   sendTextMessage,
+  fetchProfilePicture,
 } from '@/lib/evolution-api';
 import type { WhatsAppConversation, WhatsAppBotSettings } from '@/types/whatsapp';
 
@@ -50,12 +51,39 @@ async function findOrCreateConversation(
     .eq('jid', jid)
     .single();
 
-  if (existing) return existing as WhatsAppConversation;
+  if (existing) {
+    // Update avatar if missing
+    if (!existing.contact_avatar_url) {
+      const avatarUrl = await fetchProfilePicture(phone);
+      if (avatarUrl) {
+        await supabaseAdmin
+          .from('whatsapp_conversations')
+          .update({ contact_avatar_url: avatarUrl })
+          .eq('id', existing.id);
+        existing.contact_avatar_url = avatarUrl;
+      }
+    }
+    // Update contact name if pushName is available and different
+    if (pushName && pushName !== existing.contact_name) {
+      await supabaseAdmin
+        .from('whatsapp_conversations')
+        .update({ contact_name: pushName })
+        .eq('id', existing.id);
+      existing.contact_name = pushName;
+    }
+    return existing as WhatsAppConversation;
+  }
 
   const contactName = pushName || phone;
+  const avatarUrl = await fetchProfilePicture(phone);
   const { data: created, error } = await supabaseAdmin
     .from('whatsapp_conversations')
-    .insert({ jid, phone_number: phone, contact_name: contactName })
+    .insert({
+      jid,
+      phone_number: phone,
+      contact_name: contactName,
+      contact_avatar_url: avatarUrl,
+    })
     .select('*')
     .single();
 

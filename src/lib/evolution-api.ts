@@ -266,6 +266,26 @@ export function extractMediaInfo(
  * parseJidToPhone('56992533044@s.whatsapp.net') // '+56992533044'
  * parseJidToPhone('56992533044@g.us')           // '+56992533044'
  */
+/**
+ * Fetch the profile picture URL for a WhatsApp contact.
+ * Returns null if not available.
+ */
+export async function fetchProfilePicture(phone: string): Promise<string | null> {
+  try {
+    const instance = getEnv('EVOLUTION_INSTANCE_NAME');
+    const response = await evolutionFetch(`/chat/fetchProfilePictureUrl/${instance}`, {
+      method: 'POST',
+      body: JSON.stringify({ number: phone.replace(/^\+/, '') }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json() as Record<string, unknown>;
+    const url = data.profilePictureUrl ?? data.profilePicUrl ?? data.picture ?? null;
+    return typeof url === 'string' ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function parseJidToPhone(jid: string): string {
   const [numberPart] = jid.split('@');
   return `+${numberPart}`;
