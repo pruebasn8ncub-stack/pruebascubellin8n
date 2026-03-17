@@ -108,13 +108,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Extract base64 data from data URI
-    const base64Match = message.media_url.match(/^data:[^;]+;base64,(.+)$/);
-    if (!base64Match) {
-      throw new AppError('Invalid audio format', 400, 'INVALID_FORMAT');
+    // Download audio from URL or extract from base64 data URI
+    let audioBuffer: Buffer;
+    if (message.media_url.startsWith('data:')) {
+      const base64Match = message.media_url.match(/^data:[^;]+;base64,(.+)$/);
+      if (!base64Match) {
+        throw new AppError('Invalid audio format', 400, 'INVALID_FORMAT');
+      }
+      audioBuffer = Buffer.from(base64Match[1], 'base64');
+    } else {
+      const audioResponse = await fetch(message.media_url, { signal: AbortSignal.timeout(10000) });
+      if (!audioResponse.ok) {
+        throw new AppError('Failed to download audio', 500, 'DOWNLOAD_ERROR');
+      }
+      audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
     }
-
-    const audioBuffer = Buffer.from(base64Match[1], 'base64');
 
     // Send to OpenAI Whisper
     const apiKey = process.env.OPENAI_API_KEY;
@@ -123,7 +131,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'audio.ogg');
+    formData.append('file', new Blob([new Uint8Array(audioBuffer)], { type: 'audio/ogg' }), 'audio.ogg');
     formData.append('model', 'whisper-1');
     formData.append('language', 'es');
 

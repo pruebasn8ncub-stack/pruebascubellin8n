@@ -15,7 +15,7 @@ import {
   parseJidToPhone,
   sendTextMessage,
   fetchProfilePicture,
-  getMediaBase64,
+  downloadAndStoreMedia,
 } from '@/lib/evolution-api';
 import type { WhatsAppConversation, WhatsAppBotSettings } from '@/types/whatsapp';
 
@@ -181,18 +181,24 @@ function mapEvolutionStatus(
 // Media processing (audio transcription + image description)
 // ---------------------------------------------------------------------------
 
-async function transcribeAudio(dataUri: string): Promise<string | null> {
+async function transcribeAudio(mediaUrl: string): Promise<string | null> {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return null;
 
-    const base64Match = dataUri.match(/^data:[^;]+;base64,(.+)$/);
-    if (!base64Match) return null;
-
-    const audioBuffer = Buffer.from(base64Match[1], 'base64');
+    let audioBuffer: Buffer;
+    if (mediaUrl.startsWith('data:')) {
+      const base64Match = mediaUrl.match(/^data:[^;]+;base64,(.+)$/);
+      if (!base64Match) return null;
+      audioBuffer = Buffer.from(base64Match[1], 'base64');
+    } else {
+      const res = await fetch(mediaUrl, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) return null;
+      audioBuffer = Buffer.from(await res.arrayBuffer());
+    }
 
     const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'audio.ogg');
+    formData.append('file', new Blob([new Uint8Array(audioBuffer)], { type: 'audio/ogg' }), 'audio.ogg');
     formData.append('model', 'whisper-1');
     formData.append('language', 'es');
 
@@ -294,16 +300,17 @@ async function handleMessagesUpsert(
   const messageType =
     mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
 
-  // Download media as base64 since WhatsApp encrypted URLs are not browser-accessible
-  if (mediaInfo.mediaType && waMessageId && jid) {
-    const dataUri = await getMediaBase64(waMessageId, rawJid, fromMe);
-    if (dataUri) {
-      mediaInfo.mediaUrl = dataUri;
-    }
-  }
-
   // Only use pushName for incoming messages — for outgoing (fromMe), pushName is our own name
   const conversation = await findOrCreateConversation(jid, phone, fromMe ? undefined : pushName);
+
+  // Download media and upload to Supabase Storage
+  if (mediaInfo.mediaType && waMessageId && jid) {
+    const stored = await downloadAndStoreMedia(waMessageId, rawJid, fromMe, conversation.id, mediaInfo.mediaType);
+    if (stored) {
+      mediaInfo.mediaUrl = stored.url;
+      mediaInfo.mediaMimeType = stored.mimeType;
+    }
+  }
 
   if (!fromMe) {
     // ── Incoming client message ──────────────────────────────────────────────

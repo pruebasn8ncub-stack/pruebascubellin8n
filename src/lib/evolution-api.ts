@@ -262,18 +262,17 @@ export function extractMediaInfo(
 // ---------------------------------------------------------------------------
 
 /**
- * Download media content as a base64 data URI via Evolution API.
+ * Download media from Evolution API and upload to Supabase Storage.
  *
- * Useful for stickers and other media where the raw WhatsApp URL is encrypted
- * and not directly accessible from the browser.
- *
- * @returns A data URI string (e.g. "data:image/webp;base64,...") or null on failure.
+ * @returns The public URL of the uploaded file, or null on failure.
  */
-export async function getMediaBase64(
+export async function downloadAndStoreMedia(
   messageId: string,
   remoteJid: string,
-  fromMe: boolean
-): Promise<string | null> {
+  fromMe: boolean,
+  conversationId: string,
+  mediaType: string
+): Promise<{ url: string; mimeType: string } | null> {
   try {
     const instance = getEnv('EVOLUTION_INSTANCE_NAME');
     const response = await evolutionFetch(
@@ -294,12 +293,39 @@ export async function getMediaBase64(
     const base64 = data.base64;
     if (typeof base64 !== 'string' || !base64) return null;
 
-    // Evolution API returns raw base64 without data URI prefix
-    // Strip codec params (e.g. "audio/ogg; codecs=opus" → "audio/ogg")
-    // because semicolons break data URI parsing
     const rawMime = (data.mimetype as string) ?? 'image/webp';
     const mimeType = rawMime.split(';')[0].trim();
-    return `data:${mimeType};base64,${base64}`;
+
+    // Convert base64 to binary buffer
+    const buffer = Buffer.from(base64, 'base64');
+
+    // Determine file extension from mime type
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+      'video/mp4': 'mp4', 'video/3gpp': '3gp',
+      'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a',
+      'application/pdf': 'pdf',
+    };
+    const ext = extMap[mimeType] ?? 'bin';
+    const filePath = `${conversationId}/${mediaType}/${messageId}.${ext}`;
+
+    // Import supabaseAdmin dynamically to avoid circular deps
+    const { supabaseAdmin } = await import('@/lib/supabase-admin');
+
+    const { error } = await supabaseAdmin.storage
+      .from('whatsapp-media')
+      .upload(filePath, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (error) return null;
+
+    const { data: urlData } = supabaseAdmin.storage
+      .from('whatsapp-media')
+      .getPublicUrl(filePath);
+
+    return { url: urlData.publicUrl, mimeType };
   } catch {
     return null;
   }
