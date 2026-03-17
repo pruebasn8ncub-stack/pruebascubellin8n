@@ -10,6 +10,8 @@ export interface WhatsAppConversation {
   contact_avatar_url: string | null;
   last_message: string;
   last_message_at: string;
+  last_message_from_me: boolean;
+  last_message_sender_type: SenderType;
   unread_count: number;
   is_bot_paused: boolean;
   paused_by: string | null;

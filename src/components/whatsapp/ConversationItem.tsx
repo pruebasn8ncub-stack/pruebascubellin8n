@@ -79,13 +79,12 @@ export default function ConversationItem({
     const timeLabel = formatTime(conversation.last_message_at);
     const avatarGradient = getAvatarGradient(conversation.contact_name);
 
-    // Prefix for last message preview based on sender context
-    const lastMessageSender = conversation.is_bot_paused ? "admin" : "bot";
-    const lastMessagePrefix =
-        lastMessageSender === "admin" ? (
-            <span className="text-[#5e7a9a]/60 mr-0.5">Tu: </span>
+    // Show prefix based on who sent the last message
+    const lastMessagePrefix = !conversation.last_message_from_me ? null :
+        conversation.last_message_sender_type === "bot" ? (
+            <span className="text-blue-400 mr-0.5">Kini: </span>
         ) : (
-            <span className="mr-0.5 text-[0.65rem]">Kini: </span>
+            <span className="text-[#5e7a9a]/60 mr-0.5">Tu: </span>
         );
 
     return (

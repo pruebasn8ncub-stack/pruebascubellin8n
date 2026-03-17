@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { FileText, Clock, X, Play, Pause, Mic } from "lucide-react";
+import { FileText, Clock, X, Play, Pause, Mic, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppMessage, SenderType } from "@/types/whatsapp";
 
@@ -138,7 +138,6 @@ function AudioPlayer({ src, isFromMe }: { src: string; isFromMe: boolean }) {
         <div className="flex items-center gap-3 min-w-[220px]">
             <audio ref={audioRef} src={src} preload="metadata" />
 
-            {/* Play/Pause button */}
             <button
                 onClick={togglePlay}
                 className={cn(
@@ -155,7 +154,6 @@ function AudioPlayer({ src, isFromMe }: { src: string; isFromMe: boolean }) {
                 )}
             </button>
 
-            {/* Progress bar + duration */}
             <div className="flex-1 flex flex-col gap-1">
                 <div
                     className={cn("relative h-1.5 rounded-full cursor-pointer", trackBg)}
@@ -179,9 +177,61 @@ function AudioPlayer({ src, isFromMe }: { src: string; isFromMe: boolean }) {
                 </span>
             </div>
 
-            {/* Mic icon */}
             <Mic className={cn("w-4 h-4 flex-shrink-0", isFromMe ? "text-teal/40" : "text-[#5e7a9a]/40")} />
         </div>
+    );
+}
+
+// Image with click-to-expand lightbox
+function ImageMedia({ src }: { src: string }) {
+    const [open, setOpen] = useState(false);
+
+    const handleDownload = useCallback(() => {
+        const link = document.createElement("a");
+        link.href = src;
+        link.download = `imagen-${Date.now()}.jpg`;
+        link.click();
+    }, [src]);
+
+    return (
+        <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                src={src}
+                alt="imagen"
+                className="rounded-lg max-w-[280px] w-full object-cover mb-1 cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setOpen(true)}
+            />
+            {open && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                    onClick={() => setOpen(false)}
+                >
+                    {/* Download button */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+                        className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                    >
+                        <Download className="w-5 h-5 text-white" />
+                    </button>
+                    {/* Close button */}
+                    <button
+                        onClick={() => setOpen(false)}
+                        className="absolute top-6 left-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                    >
+                        <X className="w-5 h-5 text-white" />
+                    </button>
+                    {/* Full image */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={src}
+                        alt="imagen"
+                        className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
+        </>
     );
 }
 
@@ -189,14 +239,7 @@ function MediaContent({ message }: { message: WhatsAppMessage }) {
     if (!message.media_type || !message.media_url) return null;
 
     if (message.media_type === "image") {
-        return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-                src={message.media_url}
-                alt="imagen"
-                className="rounded-lg max-w-[280px] w-full object-cover mb-1"
-            />
-        );
+        return <ImageMedia src={message.media_url} />;
     }
     if (message.media_type === "video") {
         return (
@@ -311,7 +354,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     </p>
                 )}
                 <MediaContent message={message} />
-                {message.content && (
+                {message.content && !message.content.startsWith("[Foto del cliente]:") && !message.content.startsWith("[Imagen:") && (
                     <p className="text-sm text-[#0d1f35] whitespace-pre-wrap break-words">
                         {message.content}
                     </p>

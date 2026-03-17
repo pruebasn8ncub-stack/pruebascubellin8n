@@ -85,9 +85,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       .range(offset, offset + limit - 1);
 
     if (search.trim()) {
-      query = query.or(
-        `contact_name.ilike.%${search.trim()}%,phone_number.ilike.%${search.trim()}%`
-      );
+      // Sanitize search: remove characters that could manipulate PostgREST filters
+      const sanitized = search.trim().replace(/[%_(),."'\\]/g, '');
+      if (sanitized) {
+        query = query.or(
+          `contact_name.ilike.%${sanitized}%,phone_number.ilike.%${sanitized}%`
+        );
+      }
     }
 
     const [conversationsResult, botSettingsResult] = await Promise.all([

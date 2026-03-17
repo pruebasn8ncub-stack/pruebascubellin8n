@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Search } from "lucide-react";
+import { Search, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppConversation, WhatsAppBotSettings } from "@/types/whatsapp";
 import ConversationItem from "./ConversationItem";
@@ -65,20 +65,30 @@ export default function ConversationList({
                 )}
             >
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-lg text-[#0d1f35]">WhatsApp</h2>
+                    <h2 className="font-bold text-lg text-navy">WhatsApp</h2>
                     {userRole === "admin" && (
                         <button
                             type="button"
                             onClick={handleToggleClick}
                             className={cn(
-                                "text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200",
-                                togglePressed && "scale-90",
-                                botSettings.global_pause
-                                    ? "bg-red-50 text-red-500 border border-red-200 hover:bg-red-100"
-                                    : "bg-gradient-to-r from-teal to-blue-500 text-white shadow-md hover:shadow-lg"
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200",
+                                togglePressed && "scale-95",
                             )}
                         >
-                            {botSettings.global_pause ? "Bot Global: OFF" : "Bot Global: ON"}
+                            <Bot className={cn("w-4 h-4", botSettings.global_pause ? "text-red-400" : "text-teal")} />
+                            <span className={cn("text-xs font-medium", botSettings.global_pause ? "text-red-400" : "text-navy")}>
+                                Kini
+                            </span>
+                            {/* Toggle switch */}
+                            <div className={cn(
+                                "relative w-9 h-5 rounded-full transition-colors duration-200",
+                                botSettings.global_pause ? "bg-red-300" : "bg-teal"
+                            )}>
+                                <div className={cn(
+                                    "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+                                    botSettings.global_pause ? "left-0.5" : "translate-x-4 left-0.5"
+                                )} />
+                            </div>
                         </button>
                     )}
                 </div>

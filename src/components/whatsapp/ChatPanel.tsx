@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
 import BotStatusBar from "./BotStatusBar";
@@ -160,24 +160,26 @@ export default function ChatPanel({
                     </div>
                 </div>
 
-                {/* Pause / Resume button */}
-                {conversation.is_bot_paused ? (
-                    <button
-                        type="button"
-                        onClick={() => setShowResumePopup(true)}
-                        className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-teal to-blue-500 hover:shadow-lg text-white shadow-md transition-all"
-                    >
-                        Reactivar Bot
-                    </button>
-                ) : (
-                    <button
-                        type="button"
-                        onClick={() => setShowPausePopup(true)}
-                        className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition-all"
-                    >
-                        Pausar Bot
-                    </button>
-                )}
+                {/* Bot toggle for this chat */}
+                <button
+                    type="button"
+                    onClick={() => conversation.is_bot_paused ? setShowResumePopup(true) : setShowPausePopup(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0 transition-all"
+                >
+                    <MessageCircle className={cn("w-4 h-4", conversation.is_bot_paused ? "text-red-400" : "text-teal")} />
+                    <span className={cn("text-xs font-medium", conversation.is_bot_paused ? "text-red-400" : "text-navy")}>
+                        Bot chat
+                    </span>
+                    <div className={cn(
+                        "relative w-9 h-5 rounded-full transition-colors duration-200",
+                        conversation.is_bot_paused ? "bg-red-300" : "bg-teal"
+                    )}>
+                        <div className={cn(
+                            "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+                            conversation.is_bot_paused ? "left-0.5" : "translate-x-4 left-0.5"
+                        )} />
+                    </div>
+                </button>
             </div>
 
             {/* Bot Status Bar */}

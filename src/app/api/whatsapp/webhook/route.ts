@@ -76,19 +76,39 @@ async function findOrCreateConversation(
   }
 
   const contactName = pushName || phone;
+
+  // Check if bot is globally paused — new conversations inherit that state
+  const { data: botSettingsRow } = await supabaseAdmin
+    .from('whatsapp_bot_settings')
+    .select('global_pause')
+    .limit(1)
+    .single();
+  const startPaused = (botSettingsRow as { global_pause: boolean } | null)?.global_pause ?? false;
+
   const avatarUrl = await fetchProfilePicture(phone);
   const { data: created, error } = await supabaseAdmin
     .from('whatsapp_conversations')
-    .insert({
-      jid,
-      phone_number: phone,
-      contact_name: contactName,
-      contact_avatar_url: avatarUrl,
-    })
+    .upsert(
+      {
+        jid,
+        phone_number: phone,
+        contact_name: contactName,
+        contact_avatar_url: avatarUrl,
+        is_bot_paused: startPaused,
+      },
+      { onConflict: 'jid', ignoreDuplicates: true }
+    )
     .select('*')
     .single();
 
   if (error || !created) {
+    // Race condition: another request created it first — fetch it
+    const { data: raced } = await supabaseAdmin
+      .from('whatsapp_conversations')
+      .select('*')
+      .eq('jid', jid)
+      .single();
+    if (raced) return raced as WhatsAppConversation;
     throw new Error(`Failed to create conversation for jid: ${jid}`);
   }
 
@@ -158,6 +178,86 @@ function mapEvolutionStatus(
 }
 
 // ---------------------------------------------------------------------------
+// Media processing (audio transcription + image description)
+// ---------------------------------------------------------------------------
+
+async function transcribeAudio(dataUri: string): Promise<string | null> {
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return null;
+
+    const base64Match = dataUri.match(/^data:[^;]+;base64,(.+)$/);
+    if (!base64Match) return null;
+
+    const audioBuffer = Buffer.from(base64Match[1], 'base64');
+
+    const formData = new FormData();
+    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'audio.ogg');
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'es');
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
+    });
+
+    if (!response.ok) return null;
+
+    const result = (await response.json()) as { text: string };
+    return result.text.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function describeImage(dataUri: string, caption?: string): Promise<string | null> {
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return null;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: caption
+                  ? `El cliente envio esta imagen con el mensaje: "${caption}". Describe brevemente la imagen y el contexto del mensaje en una frase.`
+                  : 'El cliente envio esta imagen por WhatsApp a una clinica de kinesiologia. Describe brevemente que muestra la imagen en una frase.',
+              },
+              {
+                type: 'image_url',
+                image_url: { url: dataUri, detail: 'low' },
+              },
+            ],
+          },
+        ],
+        max_tokens: 150,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) return null;
+
+    const result = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+    };
+    return result.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
 
@@ -189,7 +289,7 @@ async function handleMessagesUpsert(
   // Respect testing filter
   if (!isTestingAllowed(phone)) return;
 
-  const content = extractTextContent(rawMessage);
+  let content = extractTextContent(rawMessage);
   const mediaInfo = extractMediaInfo(rawMessage);
   const messageType =
     mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
@@ -228,6 +328,8 @@ async function handleMessagesUpsert(
     const conversationUpdate: Record<string, unknown> = {
       last_message: content || `[${mediaInfo.mediaType ?? 'media'}]`,
       last_message_at: new Date().toISOString(),
+      last_message_from_me: false,
+      last_message_sender_type: 'client',
     };
     if (pushName && pushName !== conversation.contact_name) {
       conversationUpdate.contact_name = pushName;
@@ -237,64 +339,60 @@ async function handleMessagesUpsert(
       .update(conversationUpdate)
       .eq('id', conversation.id);
 
-    // ── Bot logic ────────────────────────────────────────────────────────────
-    const { data: botSettingsRow } = await supabaseAdmin
-      .from('whatsapp_bot_settings')
-      .select('global_pause')
-      .limit(1)
-      .single();
-
-    const botSettings = botSettingsRow as Pick<WhatsAppBotSettings, 'global_pause'> | null;
-    const globallyPaused = botSettings?.global_pause ?? false;
+    // ── Bot logic (with configurable debounce) ─────────────────────────────
     const conversationPaused = conversation.is_bot_paused;
+    const debounceSeconds = parseInt(process.env.WHATSAPP_DEBOUNCE_SECONDS ?? '10', 10);
 
-    if (!globallyPaused && !conversationPaused) {
-      const sessionId = `wa_${conversation.id}`;
-      try {
-        const botReply = await callN8nWebhook(
-          content,
-          sessionId,
-          phone,
-          pushName ?? phone
-        );
+    if (!conversationPaused) {
+      // Update pending timestamp — resets on each new message
+      const pendingTimestamp = new Date().toISOString();
+      await supabaseAdmin
+        .from('whatsapp_conversations')
+        .update({ bot_pending_since: pendingTimestamp })
+        .eq('id', conversation.id);
 
-        if (botReply) {
-          const sendResult = await sendTextMessage(phone, botReply);
-
-          await supabaseAdmin.from('whatsapp_messages').insert({
-            conversation_id: conversation.id,
-            wa_message_id: sendResult.messageId,
-            sender_type: 'bot',
-            sender_id: null,
-            content: botReply,
-            media_type: null,
-            media_url: null,
-            media_mime_type: null,
-            message_type: 'conversation',
-            status: 'delivered',
-            from_me: true,
+      // Tell N8N to wait exactly X seconds then process
+      const debounceUrl = process.env.N8N_DEBOUNCE_WEBHOOK_URL;
+      if (debounceUrl) {
+        try {
+          await fetch(debounceUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conversationId: conversation.id,
+              pendingTimestamp,
+              debounceSeconds,
+            }),
+            signal: AbortSignal.timeout(5000),
           });
+        } catch { /* N8N unavailable — process-pending fallback */ }
+      }
+    }
 
-          await supabaseAdmin
-            .from('whatsapp_conversations')
-            .update({ last_message: botReply, last_message_at: new Date().toISOString() })
-            .eq('id', conversation.id);
+    // ── AI processing (after debounce is triggered) ────────────────────────
+    // Transcribe audio or describe images, then update the saved message
+    if (mediaInfo.mediaUrl) {
+      let aiContent: string | null = null;
+
+      if (mediaInfo.mediaType === 'audio' && !content) {
+        const transcription = await transcribeAudio(mediaInfo.mediaUrl);
+        if (transcription) {
+          aiContent = `[Audio transcrito]: ${transcription}`;
         }
-      } catch {
-        // Save failed bot message without sending to client
-        await supabaseAdmin.from('whatsapp_messages').insert({
-          conversation_id: conversation.id,
-          wa_message_id: `failed_${Date.now()}`,
-          sender_type: 'bot',
-          sender_id: null,
-          content: '',
-          media_type: null,
-          media_url: null,
-          media_mime_type: null,
-          message_type: 'conversation',
-          status: 'failed',
-          from_me: true,
-        });
+      } else if (mediaInfo.mediaType === 'image') {
+        const description = await describeImage(mediaInfo.mediaUrl, content || undefined);
+        if (description) {
+          aiContent = content
+            ? `${content}\n[Foto del cliente]: ${description}`
+            : `[Foto del cliente]: ${description}`;
+        }
+      }
+
+      if (aiContent) {
+        await supabaseAdmin
+          .from('whatsapp_messages')
+          .update({ content: aiContent })
+          .eq('wa_message_id', waMessageId);
       }
     }
   } else {
@@ -325,15 +423,18 @@ async function handleMessagesUpsert(
       from_me: true,
     });
 
-    // Auto-pause bot when human takes over
+    // Auto-pause bot and cancel pending debounce when human takes over
     await supabaseAdmin
       .from('whatsapp_conversations')
       .update({
         is_bot_paused: true,
         paused_by: null,
         paused_at: new Date().toISOString(),
+        bot_pending_since: null,
         last_message: content || `[${mediaInfo.mediaType ?? 'media'}]`,
         last_message_at: new Date().toISOString(),
+        last_message_from_me: true,
+        last_message_sender_type: 'admin',
       })
       .eq('id', conversation.id);
 
@@ -365,10 +466,20 @@ async function handleMessagesUpdate(
   const mappedStatus = mapEvolutionStatus(rawStatus as string | number);
   if (!mappedStatus) return;
 
-  await supabaseAdmin
+  // Try exact match first
+  const { count } = await supabaseAdmin
     .from('whatsapp_messages')
     .update({ status: mappedStatus })
     .eq('wa_message_id', waMessageId);
+
+  if (!count && waMessageId.length > 20) {
+    // Evolution API status updates may use longer IDs than sendText returned.
+    // Try matching the first 20 chars (the short ID we stored).
+    await supabaseAdmin
+      .from('whatsapp_messages')
+      .update({ status: mappedStatus })
+      .eq('wa_message_id', waMessageId.substring(0, 20));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +512,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } else if (normalizedEvent === 'MESSAGES.UPDATE' || normalizedEvent === 'MESSAGES_UPDATE') {
       await handleMessagesUpdate(data);
     }
+
 
     return ok();
   } catch {

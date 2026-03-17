@@ -138,7 +138,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     });
 
-    // Auto-pause bot if it is currently active
+    // Auto-pause bot and cancel any pending debounce
     if (!conversation.is_bot_paused) {
       await supabaseAdmin
         .from('whatsapp_conversations')
@@ -146,6 +146,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           is_bot_paused: true,
           paused_by: authUser.id,
           paused_at: new Date().toISOString(),
+          bot_pending_since: null,
         })
         .eq('id', conversationId);
     }
@@ -156,6 +157,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .update({
         last_message: content,
         last_message_at: new Date().toISOString(),
+        last_message_from_me: true,
+        last_message_sender_type: 'admin',
       })
       .eq('id', conversationId);
 

@@ -143,6 +143,10 @@ export default function WhatsAppPage() {
             return;
         }
 
+        // Clear previous messages immediately when switching conversations
+        setMessages([]);
+        setHasMore(false);
+
         const fetchMessages = async () => {
             // Optimistically clear unread count immediately
             setConversations((prev) =>
@@ -232,6 +236,8 @@ export default function WhatsAppPage() {
                                             ? `[${newMsg.media_type}]`
                                             : ""),
                                     last_message_at: newMsg.created_at,
+                                    last_message_from_me: newMsg.from_me,
+                                    last_message_sender_type: newMsg.sender_type,
                                     unread_count:
                                         newMsg.conversation_id ===
                                         selectedIdRef.current
@@ -293,9 +299,14 @@ export default function WhatsAppPage() {
                         const updated =
                             payload.new as WhatsAppConversation;
                         setConversations((prev) =>
-                            prev.map((c) =>
-                                c.id === updated.id ? updated : c
-                            )
+                            prev.map((c) => {
+                                if (c.id !== updated.id) return c;
+                                // Keep unread_count at 0 for the selected conversation
+                                if (updated.id === selectedIdRef.current) {
+                                    return { ...updated, unread_count: 0 };
+                                }
+                                return updated;
+                            })
                         );
                     }
                 }
@@ -338,7 +349,7 @@ export default function WhatsAppPage() {
         setConversations((prev) =>
             prev.map((c) =>
                 c.id === selectedId
-                    ? { ...c, last_message: content, last_message_at: optimisticMsg.created_at }
+                    ? { ...c, last_message: content, last_message_at: optimisticMsg.created_at, last_message_from_me: true, last_message_sender_type: "admin" as const }
                     : c
             )
         );
