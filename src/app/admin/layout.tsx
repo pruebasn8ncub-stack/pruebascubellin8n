@@ -59,7 +59,7 @@ export default function AdminLayout({
     const isWhatsApp = pathname?.startsWith("/admin/whatsapp");
 
     return (
-        <div className="min-h-screen flex bg-slate-50">
+        <div className={cn("flex bg-slate-50", isWhatsApp ? "h-screen overflow-hidden" : "min-h-screen")}>
             {/* Sidebar — only inside apps, sticky while scrolling */}
             {!isDashboard && (
                 <aside className="w-64 hidden md:flex flex-col border-r border-slate-200 bg-white sticky top-0 h-screen overflow-y-auto">
@@ -99,7 +99,7 @@ export default function AdminLayout({
             )}
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-h-screen overflow-hidden bg-slate-50 text-slate-800">
+            <main className={cn("flex-1 flex flex-col overflow-hidden bg-slate-50 text-slate-800", isWhatsApp ? "h-screen" : "min-h-screen")}>
                 <div className={cn("flex-1", isWhatsApp ? "overflow-hidden" : "overflow-y-auto p-4 md:p-8")}>
                     {children}
                 </div>
