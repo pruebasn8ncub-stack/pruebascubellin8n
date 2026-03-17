@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
 import BotStatusBar from "./BotStatusBar";
 import MessageBubble from "./MessageBubble";
@@ -20,6 +21,25 @@ interface ChatPanelProps {
     onLoadMore: () => void;
     hasMore: boolean;
     isLoadingMore: boolean;
+}
+
+const AVATAR_GRADIENTS = [
+    "from-emerald-400 to-emerald-600",
+    "from-blue-400 to-blue-600",
+    "from-purple-400 to-purple-600",
+    "from-pink-400 to-pink-600",
+    "from-orange-400 to-orange-600",
+    "from-teal-400 to-teal-600",
+    "from-indigo-400 to-indigo-600",
+    "from-rose-400 to-rose-600",
+];
+
+function getAvatarGradient(name: string): string {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
 }
 
 function getInitials(name: string): string {
@@ -107,11 +127,12 @@ export default function ChatPanel({
     }
 
     const initials = getInitials(conversation.contact_name);
+    const avatarGradient = getAvatarGradient(conversation.contact_name);
 
     return (
         <div className="flex-1 flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 bg-white border-b border-slate-200 px-5 py-3 flex-shrink-0">
+            <div className="flex items-center justify-between gap-4 bg-white shadow-sm border-b border-slate-100 px-5 py-3 flex-shrink-0">
                 <div className="flex items-center gap-3">
                     {conversation.contact_avatar_url ? (
                         <img
@@ -120,12 +141,17 @@ export default function ChatPanel({
                             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-semibold text-sm flex-shrink-0 select-none">
+                        <div
+                            className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 select-none bg-gradient-to-br shadow-sm",
+                                avatarGradient
+                            )}
+                        >
                             {initials || "?"}
                         </div>
                     )}
                     <div>
-                        <p className="font-semibold text-sm text-[#0d1f35] leading-tight">
+                        <p className="font-bold text-sm text-[#0d1f35] leading-tight">
                             {conversation.contact_name}
                         </p>
                         <p className="text-xs text-[#5e7a9a] leading-tight">
@@ -139,7 +165,7 @@ export default function ChatPanel({
                     <button
                         type="button"
                         onClick={() => setShowResumePopup(true)}
-                        className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold bg-[#e0f7f5] text-[#00b4a6] hover:bg-[#c0f0ec] transition-colors"
+                        className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-teal to-blue-500 hover:shadow-lg text-white shadow-md transition-all"
                     >
                         Reactivar Bot
                     </button>
@@ -147,7 +173,7 @@ export default function ChatPanel({
                     <button
                         type="button"
                         onClick={() => setShowPausePopup(true)}
-                        className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                        className="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition-all"
                     >
                         Pausar Bot
                     </button>
@@ -160,14 +186,14 @@ export default function ChatPanel({
                 isGlobalPaused={botSettings.global_pause}
             />
 
-            {/* Messages area — relative so the scroll button can be positioned inside */}
+            {/* Messages area */}
             <div className="flex-1 relative overflow-hidden">
                 <div
                     ref={messagesContainerRef}
                     className="h-full overflow-y-auto px-[60px] py-5"
                     style={{
                         backgroundColor: "#efeae2",
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23d5cfc7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.55'%3E%3Crect x='6' y='6' width='18' height='12' rx='3'/%3E%3Cpolygon points='10,18 8,23 14,18'/%3E%3Ccircle cx='10' cy='12' r='1.2'/%3E%3Ccircle cx='15' cy='12' r='1.2'/%3E%3Ccircle cx='20' cy='12' r='1.2'/%3E%3Cpath d='M53 11 c0-2-2-4-4-2 c-2-2-4 0-4 2 c0 3 4 6 4 6 s4-3 4-6z'/%3E%3Cpolygon points='67,6 68.5,10.5 73,10.5 69.5,13 71,17.5 67,15 63,17.5 64.5,13 61,10.5 65.5,10.5'/%3E%3Ccircle cx='15' cy='58' r='7'/%3E%3Ccircle cx='12.5' cy='56' r='1'/%3E%3Ccircle cx='17.5' cy='56' r='1'/%3E%3Cpath d='M11.5 60 q3.5 3 7 0'/%3E%3Cpath d='M57 48 q-1-1 0-3 l2-3 q1-1 2 0 l2 2 q1 1-1 4 q-3 4-7 7 q-3 2-4 1 l-2-2 q-1-1 0-2 l3-2 q2-1 3 0 l1 1 q2-2 1-3z'/%3E%3Ccircle cx='68' cy='55' r='2.5'/%3E%3Ccircle cx='68' cy='49.5' r='2'/%3E%3Ccircle cx='68' cy='60.5' r='2'/%3E%3Ccircle cx='62.5' cy='55' r='2'/%3E%3Ccircle cx='73.5' cy='55' r='2'/%3E%3C/g%3E%3C/svg%3E")`,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23d5cfc7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.3'%3E%3Crect x='6' y='6' width='18' height='12' rx='3'/%3E%3Cpolygon points='10,18 8,23 14,18'/%3E%3Ccircle cx='10' cy='12' r='1.2'/%3E%3Ccircle cx='15' cy='12' r='1.2'/%3E%3Ccircle cx='20' cy='12' r='1.2'/%3E%3Cpath d='M53 11 c0-2-2-4-4-2 c-2-2-4 0-4 2 c0 3 4 6 4 6 s4-3 4-6z'/%3E%3Cpolygon points='67,6 68.5,10.5 73,10.5 69.5,13 71,17.5 67,15 63,17.5 64.5,13 61,10.5 65.5,10.5'/%3E%3Ccircle cx='15' cy='58' r='7'/%3E%3Ccircle cx='12.5' cy='56' r='1'/%3E%3Ccircle cx='17.5' cy='56' r='1'/%3E%3Cpath d='M11.5 60 q3.5 3 7 0'/%3E%3Cpath d='M57 48 q-1-1 0-3 l2-3 q1-1 2 0 l2 2 q1 1-1 4 q-3 4-7 7 q-3 2-4 1 l-2-2 q-1-1 0-2 l3-2 q2-1 3 0 l1 1 q2-2 1-3z'/%3E%3Ccircle cx='68' cy='55' r='2.5'/%3E%3Ccircle cx='68' cy='49.5' r='2'/%3E%3Ccircle cx='68' cy='60.5' r='2'/%3E%3Ccircle cx='62.5' cy='55' r='2'/%3E%3Ccircle cx='73.5' cy='55' r='2'/%3E%3C/g%3E%3C/svg%3E")`,
                         backgroundRepeat: "repeat",
                     }}
                 >
@@ -178,7 +204,7 @@ export default function ChatPanel({
                                 type="button"
                                 onClick={onLoadMore}
                                 disabled={isLoadingMore}
-                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-sm text-[#5e7a9a] shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-60"
+                                className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-teal text-xs font-medium shadow-sm hover:shadow-md transition-all disabled:opacity-60"
                             >
                                 {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Cargar mas...
@@ -195,7 +221,7 @@ export default function ChatPanel({
                             <div key={msg.id}>
                                 {showDivider && (
                                     <div className="flex justify-center my-3">
-                                        <span className="bg-white text-[#5e7a9a] text-xs px-3 py-1 rounded-full shadow-sm">
+                                        <span className="bg-white/90 backdrop-blur-sm text-[#5e7a9a] text-[0.7rem] font-medium px-4 py-1 rounded-full shadow-sm">
                                             {formatDateDivider(msg.created_at)}
                                         </span>
                                     </div>
@@ -213,8 +239,8 @@ export default function ChatPanel({
                     <button
                         type="button"
                         onClick={scrollToBottom}
-                        aria-label="Ir al mensaje más reciente"
-                        className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-[#5e7a9a] hover:bg-slate-50 transition-colors z-10"
+                        aria-label="Ir al mensaje mas reciente"
+                        className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl flex items-center justify-center text-[#5e7a9a] border border-slate-200 transition-all hover:scale-105 z-10"
                     >
                         <ChevronDown className="w-5 h-5" />
                     </button>

@@ -57,7 +57,7 @@ function DoubleCheck({ colorClass }: { colorClass: string }) {
 function DeliveryTicks({ status }: { status: WhatsAppMessage["status"] }) {
     if (status === "pending") {
         return (
-            <Clock className="inline-block ml-1 flex-shrink-0 w-3 h-3 text-black/40" />
+            <Clock className="inline-block ml-1 flex-shrink-0 w-3 h-3 text-black/30" />
         );
     }
     if (status === "sent") {
@@ -133,28 +133,28 @@ const senderConfig: Record<SenderType, {
 }> = {
     client: {
         align: "justify-start",
-        bubble: "bg-white",
+        bubble: "bg-white shadow-sm",
         label: null,
         labelColor: "",
-        roundedClass: "rounded-xl rounded-tl-none",
+        roundedClass: "rounded-2xl rounded-tl-md",
     },
     bot: {
         align: "justify-end",
-        bubble: "bg-[#dbeafe]",
+        bubble: "bg-gradient-to-br from-blue-50 to-blue-100 shadow-sm",
         label: "Kini",
-        labelColor: "text-[#3b82f6]",
-        roundedClass: "rounded-xl rounded-tr-none",
+        labelColor: "text-blue-500",
+        roundedClass: "rounded-2xl rounded-tr-md",
     },
     admin: {
         align: "justify-end",
-        bubble: "bg-[#d9fdd3]",
+        bubble: "bg-gradient-to-br from-[#e0f7f5] to-emerald-50 shadow-sm",
         label: "Admin",
-        labelColor: "text-[#00b4a6]",
-        roundedClass: "rounded-xl rounded-tr-none",
+        labelColor: "text-teal",
+        roundedClass: "rounded-2xl rounded-tr-md",
     },
     system: {
         align: "justify-center",
-        bubble: "bg-[#fef9c3] text-center",
+        bubble: "bg-amber-50/80 backdrop-blur-sm text-center",
         label: null,
         labelColor: "",
         roundedClass: "rounded-full",
@@ -168,7 +168,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     if (message.sender_type === "system") {
         return (
             <div className="flex justify-center my-1">
-                <div className={cn("px-4 py-1.5 text-xs text-[#854d0e]", config.bubble, config.roundedClass)}>
+                <div className={cn("px-4 py-1.5 text-[0.7rem] font-medium text-amber-700 shadow-sm", config.bubble, config.roundedClass)}>
                     {message.content}
                 </div>
             </div>
@@ -179,14 +179,14 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         <div className={cn("flex my-1", config.align)}>
             <div
                 className={cn(
-                    "max-w-[65%] px-3 py-2 shadow-sm",
+                    "max-w-[70%] px-3 py-2",
                     config.bubble,
                     config.roundedClass,
-                    isFailed && "border-2 border-red-400"
+                    isFailed && "ring-2 ring-red-200"
                 )}
             >
                 {config.label && (
-                    <p className={cn("text-xs font-bold mb-0.5", config.labelColor)}>
+                    <p className={cn("text-[0.65rem] font-semibold mb-0.5", config.labelColor)}>
                         {config.label}
                     </p>
                 )}
@@ -197,7 +197,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                     </p>
                 )}
                 <div className="flex items-center justify-end gap-1 mt-0.5">
-                    <span className="text-[0.65rem] text-black/40">
+                    <span className="text-[0.6rem] text-black/30">
                         {formatTimestamp(message.created_at)}
                     </span>
                     {message.from_me && <DeliveryTicks status={message.status} />}

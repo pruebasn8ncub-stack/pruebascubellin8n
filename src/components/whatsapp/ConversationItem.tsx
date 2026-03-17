@@ -9,23 +9,23 @@ interface ConversationItemProps {
     onClick: () => void;
 }
 
-const AVATAR_COLORS = [
-    "bg-emerald-500",
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-pink-500",
-    "bg-orange-500",
-    "bg-teal-500",
-    "bg-indigo-500",
-    "bg-rose-500",
+const AVATAR_GRADIENTS = [
+    "from-emerald-400 to-emerald-600",
+    "from-blue-400 to-blue-600",
+    "from-purple-400 to-purple-600",
+    "from-pink-400 to-pink-600",
+    "from-orange-400 to-orange-600",
+    "from-teal-400 to-teal-600",
+    "from-indigo-400 to-indigo-600",
+    "from-rose-400 to-rose-600",
 ];
 
-function getAvatarColor(name: string): string {
+function getAvatarGradient(name: string): string {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
 }
 
 function getInitials(name: string): string {
@@ -77,15 +77,15 @@ export default function ConversationItem({
 }: ConversationItemProps) {
     const initials = getInitials(conversation.contact_name);
     const timeLabel = formatTime(conversation.last_message_at);
-    const avatarColor = getAvatarColor(conversation.contact_name);
+    const avatarGradient = getAvatarGradient(conversation.contact_name);
 
     // Prefix for last message preview based on sender context
     const lastMessageSender = conversation.is_bot_paused ? "admin" : "bot";
     const lastMessagePrefix =
         lastMessageSender === "admin" ? (
-            <span className="text-slate-400 mr-0.5">Tú: </span>
+            <span className="text-[#5e7a9a]/60 mr-0.5">Tu: </span>
         ) : (
-            <span className="mr-0.5">🤖 </span>
+            <span className="mr-0.5 text-[0.65rem]">Kini: </span>
         );
 
     return (
@@ -93,11 +93,11 @@ export default function ConversationItem({
             type="button"
             onClick={onClick}
             className={cn(
-                "w-full flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 cursor-pointer text-left",
-                "transition-colors duration-150",
+                "w-full flex items-center gap-3 px-5 py-3.5 border-b border-slate-100/80 cursor-pointer text-left",
+                "transition-all duration-200",
                 isSelected
-                    ? "bg-[#f0f2f5] border-l-[3px] border-l-[#00b4a6]"
-                    : "bg-white hover:bg-[#f5f6f6] border-l-[3px] border-l-transparent"
+                    ? "bg-teal/5 border-l-[3px] border-l-teal shadow-[inset_4px_0_8px_-4px_rgba(0,180,166,0.1)]"
+                    : "bg-white hover:bg-[#f5f8fc] border-l-[3px] border-l-transparent"
             )}
         >
             {/* Avatar */}
@@ -111,8 +111,8 @@ export default function ConversationItem({
                 <div
                     className={cn(
                         "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
-                        "text-white font-semibold text-sm select-none",
-                        avatarColor
+                        "text-white font-semibold text-sm select-none bg-gradient-to-br shadow-sm",
+                        avatarGradient
                     )}
                 >
                     {initials || "?"}
@@ -127,16 +127,16 @@ export default function ConversationItem({
                             {conversation.contact_name}
                         </span>
                         {conversation.is_bot_paused ? (
-                            <span className="text-[0.6rem] leading-none px-1 py-0.5 rounded-full bg-red-100 text-red-500 flex-shrink-0">
-                                ⏸
+                            <span className="text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-red-50 text-red-400 font-medium flex-shrink-0">
+                                Pausado
                             </span>
                         ) : (
-                            <span className="text-[0.6rem] leading-none px-1 py-0.5 rounded-full bg-green-100 text-green-600 flex-shrink-0">
-                                🤖
+                            <span className="text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-teal/10 text-teal font-medium flex-shrink-0">
+                                Activo
                             </span>
                         )}
                     </div>
-                    <span className="text-[0.7rem] text-[#5e7a9a] flex-shrink-0">
+                    <span className="text-[0.65rem] text-[#5e7a9a] flex-shrink-0">
                         {timeLabel}
                     </span>
                 </div>
@@ -147,7 +147,7 @@ export default function ConversationItem({
                         {conversation.last_message}
                     </p>
                     {conversation.unread_count > 0 && (
-                        <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-[#25d366] text-white text-[0.6rem] font-semibold flex items-center justify-center px-1">
+                        <span className="flex-shrink-0 min-w-[20px] h-5 rounded-full bg-gradient-to-r from-teal to-emerald-400 text-white text-[0.6rem] font-bold flex items-center justify-center px-1.5 shadow-sm">
                             {conversation.unread_count > 99
                                 ? "99+"
                                 : conversation.unread_count}

@@ -1,5 +1,8 @@
 "use client";
 
+import { Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 interface BotStatusBarProps {
     isBotPaused: boolean;
     isGlobalPaused: boolean;
@@ -8,7 +11,11 @@ interface BotStatusBarProps {
 export default function BotStatusBar({ isBotPaused, isGlobalPaused }: BotStatusBarProps) {
     if (isGlobalPaused) {
         return (
-            <div className="px-5 py-2 bg-[#fef9c3] text-[#854d0e] text-xs font-medium text-center">
+            <div className={cn(
+                "px-4 py-2 text-xs font-medium flex items-center gap-2",
+                "bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-600 border-l-[3px] border-l-amber-400"
+            )}>
+                <Bot className="w-3.5 h-3.5" />
                 Bot pausado globalmente
             </div>
         );
@@ -16,14 +23,22 @@ export default function BotStatusBar({ isBotPaused, isGlobalPaused }: BotStatusB
 
     if (isBotPaused) {
         return (
-            <div className="px-5 py-2 bg-[#fef2f2] text-[#ef4444] text-xs font-medium text-center">
+            <div className={cn(
+                "px-4 py-2 text-xs font-medium flex items-center gap-2",
+                "bg-gradient-to-r from-red-50 to-orange-50 text-red-500 border-l-[3px] border-l-red-400"
+            )}>
+                <Bot className="w-3.5 h-3.5" />
                 Bot pausado — Estas respondiendo directamente
             </div>
         );
     }
 
     return (
-        <div className="px-5 py-2 bg-[#e0f7f5] text-[#00b4a6] text-xs font-medium text-center">
+        <div className={cn(
+            "px-4 py-2 text-xs font-medium flex items-center gap-2",
+            "bg-gradient-to-r from-teal/5 to-emerald-50 text-teal border-l-[3px] border-l-teal"
+        )}>
+            <Bot className="w-3.5 h-3.5" />
             Kini esta activo en esta conversacion
         </div>
     );

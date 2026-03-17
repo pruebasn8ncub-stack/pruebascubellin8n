@@ -84,7 +84,7 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
     return (
         <div
             className={cn(
-                "relative flex items-end gap-3 bg-[#f0f2f5] border-t border-slate-200 px-5 py-3",
+                "relative flex items-end gap-3 bg-white border-t border-slate-100 px-4 py-3",
                 disabled && "opacity-50"
             )}
         >
@@ -110,7 +110,7 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 type="button"
                 disabled={disabled}
                 aria-label="Adjuntar archivo"
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-[#00b4a6] transition-colors rounded-full"
+                className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-[#5e7a9a] hover:text-teal transition-colors rounded-full"
             >
                 <Paperclip className="w-5 h-5" />
             </button>
@@ -124,8 +124,8 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 className={cn(
                     "flex-shrink-0 w-9 h-9 flex items-center justify-center transition-colors rounded-full",
                     showEmojiPicker
-                        ? "text-[#00b4a6]"
-                        : "text-slate-400 hover:text-[#00b4a6]"
+                        ? "text-teal"
+                        : "text-[#5e7a9a] hover:text-teal"
                 )}
             >
                 <Smile className="w-5 h-5" />
@@ -140,8 +140,8 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 disabled={disabled}
                 placeholder="Escribe un mensaje..."
                 className={cn(
-                    "flex-1 resize-none bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-[#0d1f35]",
-                    "placeholder:text-[#5e7a9a] focus:outline-none focus:ring-2 focus:ring-[#00b4a6]/30 focus:border-[#00b4a6]",
+                    "flex-1 resize-none bg-[#f5f8fc] border-0 rounded-2xl px-4 py-2.5 text-sm text-[#0d1f35]",
+                    "placeholder:text-[#5e7a9a] focus:outline-none focus:ring-2 focus:ring-teal/20 focus:bg-white",
                     "transition-all overflow-y-auto leading-6"
                 )}
                 style={{ minHeight: "40px", maxHeight: "120px" }}
@@ -154,8 +154,8 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 aria-label="Enviar mensaje"
                 className={cn(
                     "flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all",
-                    "bg-[#00b4a6] text-white hover:bg-[#009688] shadow-sm",
-                    (disabled || !value.trim()) && "opacity-40 cursor-not-allowed"
+                    "bg-gradient-to-r from-teal to-blue-500 text-white hover:shadow-lg shadow-md hover:scale-105",
+                    (disabled || !value.trim()) && "opacity-40 cursor-not-allowed hover:scale-100 hover:shadow-md"
                 )}
             >
                 <Send className="w-4 h-4" />

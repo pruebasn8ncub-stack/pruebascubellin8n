@@ -57,11 +57,11 @@ export default function ConversationList({
 
     return (
         <div className="w-[380px] flex-shrink-0 flex flex-col h-full bg-white border-r border-slate-200">
-            {/* Header with scroll-triggered shadow */}
+            {/* Header */}
             <div
                 className={cn(
-                    "px-5 py-4 border-b border-slate-100 transition-shadow duration-200",
-                    headerShadow && "shadow-md"
+                    "px-5 py-4 bg-white border-b border-slate-100 transition-shadow duration-200",
+                    headerShadow && "shadow-sm"
                 )}
             >
                 <div className="flex items-center justify-between mb-3">
@@ -71,11 +71,11 @@ export default function ConversationList({
                             type="button"
                             onClick={handleToggleClick}
                             className={cn(
-                                "text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200",
+                                "text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-200",
                                 togglePressed && "scale-90",
                                 botSettings.global_pause
-                                    ? "bg-red-100 text-red-600 hover:bg-red-200"
-                                    : "bg-[#e0f7f5] text-[#00b4a6] hover:bg-[#c0f0ec]"
+                                    ? "bg-red-50 text-red-500 border border-red-200 hover:bg-red-100"
+                                    : "bg-gradient-to-r from-teal to-blue-500 text-white shadow-md hover:shadow-lg"
                             )}
                         >
                             {botSettings.global_pause ? "Bot Global: OFF" : "Bot Global: ON"}
@@ -83,7 +83,7 @@ export default function ConversationList({
                     )}
                 </div>
 
-                {/* Search with icon inside input */}
+                {/* Search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5e7a9a] pointer-events-none" />
                     <input
@@ -92,8 +92,8 @@ export default function ConversationList({
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Buscar conversacion..."
                         className={cn(
-                            "w-full pl-9 pr-4 py-2 rounded-xl bg-[#f0f2f5] border border-transparent text-sm text-[#0d1f35]",
-                            "placeholder:text-[#5e7a9a] focus:outline-none focus:ring-2 focus:ring-[#00b4a6]/30 focus:border-[#00b4a6]",
+                            "w-full pl-9 pr-4 py-2.5 rounded-xl bg-[#f5f8fc] border-0 text-sm text-[#0d1f35]",
+                            "placeholder:text-[#5e7a9a] focus:outline-none focus:ring-2 focus:ring-teal/20 focus:bg-white",
                             "transition-all"
                         )}
                     />
@@ -104,7 +104,7 @@ export default function ConversationList({
             <div
                 ref={listRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto"
+                className="flex-1 overflow-y-auto relative"
             >
                 {filtered.length === 0 ? (
                     <p className="text-center text-sm text-[#5e7a9a] mt-10 px-4">
@@ -120,6 +120,9 @@ export default function ConversationList({
                         />
                     ))
                 )}
+
+                {/* Bottom gradient fade for scrollable list */}
+                <div className="sticky bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none" />
             </div>
         </div>
     );
