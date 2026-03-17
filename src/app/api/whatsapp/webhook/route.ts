@@ -140,9 +140,19 @@ async function saveN8nChatHistory(
 function mapEvolutionStatus(
   status: string | number
 ): 'delivered' | 'read' | null {
+  // Handle numeric status codes
   const s = Number(status);
   if (s === 3) return 'delivered';
   if (s === 4 || s === 5) return 'read';
+
+  // Handle string status labels from Evolution API
+  if (typeof status === 'string') {
+    const upper = status.toUpperCase();
+    if (upper === 'DELIVERY_ACK' || upper === 'DELIVERED') return 'delivered';
+    if (upper === 'READ' || upper === 'PLAYED') return 'read';
+    if (upper === 'SERVER_ACK' || upper === 'SENT') return null; // already saved as 'sent'
+  }
+
   return null;
 }
 
@@ -331,7 +341,10 @@ async function handleMessagesUpdate(
   if (!key) return;
 
   const waMessageId = typeof key.id === 'string' ? key.id : '';
-  const rawStatus = data.status;
+
+  // Status can be in data.status, data.update.status, or data.update
+  const update = data.update as Record<string, unknown> | undefined;
+  const rawStatus = data.status ?? update?.status ?? update;
 
   if (!waMessageId || rawStatus === undefined) return;
 

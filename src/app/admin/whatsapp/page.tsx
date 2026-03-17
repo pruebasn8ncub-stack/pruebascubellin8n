@@ -246,6 +246,27 @@ export default function WhatsAppPage() {
                     );
                 }
             )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "whatsapp_messages",
+                },
+                (payload) => {
+                    const updated = payload.new as WhatsAppMessage;
+                    // Update message status (ticks: sent → delivered → read)
+                    if (updated.conversation_id === selectedIdRef.current) {
+                        setMessages((prev) =>
+                            prev.map((m) =>
+                                m.wa_message_id === updated.wa_message_id
+                                    ? { ...m, status: updated.status }
+                                    : m
+                            )
+                        );
+                    }
+                }
+            )
             .subscribe((status) => {
                 if (status === "SUBSCRIBED") {
                     setRealtimeConnected(true);
