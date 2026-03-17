@@ -21,7 +21,7 @@ import type { WhatsAppConversation } from '@/types/whatsapp';
 
 const sendSchema = z.object({
   conversationId: z.string().uuid(),
-  content: z.string().min(1),
+  content: z.string().min(1).max(4096),
   mediaUrl: z.string().url().optional(),
   mediaType: z.enum(['image', 'video', 'audio', 'document']).optional(),
 });

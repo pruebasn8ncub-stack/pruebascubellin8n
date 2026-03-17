@@ -217,7 +217,11 @@ async function transcribeAudio(mediaUrl: string): Promise<string | null> {
   }
 }
 
-async function describeImage(dataUri: string, caption?: string): Promise<string | null> {
+/**
+ * Generate a text description of an image for memory/context storage.
+ * The chatbot sees the real image via multimodal — this is only for the chat history.
+ */
+async function describeImageForMemory(imageUrl: string, caption?: string): Promise<string | null> {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return null;
@@ -237,17 +241,14 @@ async function describeImage(dataUri: string, caption?: string): Promise<string 
               {
                 type: 'text',
                 text: caption
-                  ? `El cliente envio esta imagen con el mensaje: "${caption}". Describe brevemente la imagen y el contexto del mensaje en una frase.`
-                  : 'El cliente envio esta imagen por WhatsApp a una clinica de kinesiologia. Describe brevemente que muestra la imagen en una frase.',
+                  ? `Describe esta imagen en 1-2 frases concisas. El usuario la envió con el mensaje: "${caption}".`
+                  : 'Describe esta imagen en 1-2 frases concisas.',
               },
-              {
-                type: 'image_url',
-                image_url: { url: dataUri, detail: 'low' },
-              },
+              { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } },
             ],
           },
         ],
-        max_tokens: 150,
+        max_tokens: 200,
       }),
       signal: AbortSignal.timeout(15000),
     });
@@ -304,19 +305,50 @@ async function handleMessagesUpsert(
   const conversation = await findOrCreateConversation(jid, phone, fromMe ? undefined : pushName);
 
   // Download media and upload to Supabase Storage
+  let mediaDataUri: string | null = null;
   if (mediaInfo.mediaType && waMessageId && jid) {
     const stored = await downloadAndStoreMedia(waMessageId, rawJid, fromMe, conversation.id, mediaInfo.mediaType);
     if (stored) {
       mediaInfo.mediaUrl = stored.url;
       mediaInfo.mediaMimeType = stored.mimeType;
+      mediaDataUri = stored.dataUri;
     } else {
       // Don't store WhatsApp encrypted URLs — they're not browser-accessible
       mediaInfo.mediaUrl = null;
     }
   }
 
+  // ── AI processing BEFORE insert so real-time gets full content
+  if (!fromMe && mediaInfo.mediaUrl) {
+    if (mediaInfo.mediaType === 'audio' && !content) {
+      const transcription = await transcribeAudio(mediaDataUri ?? mediaInfo.mediaUrl);
+      if (transcription) {
+        content = `[Audio transcrito]: ${transcription}`;
+      }
+    } else if (mediaInfo.mediaType === 'image') {
+      // Generate description for memory/context — Gemini still sees the real image via multimodal
+      const description = await describeImageForMemory(mediaDataUri ?? mediaInfo.mediaUrl, content || undefined);
+      if (description) {
+        content = content
+          ? `${content}\n[Imagen: ${description}]`
+          : `[Imagen: ${description}]`;
+      }
+    }
+  }
+
   if (!fromMe) {
     // ── Incoming client message ──────────────────────────────────────────────
+
+    // Idempotency: skip if this message was already processed (webhook retry)
+    if (waMessageId) {
+      const { data: existingIncoming } = await supabaseAdmin
+        .from('whatsapp_messages')
+        .select('id')
+        .eq('wa_message_id', waMessageId)
+        .single();
+      if (existingIncoming) return;
+    }
+
     await supabaseAdmin.from('whatsapp_messages').insert({
       conversation_id: conversation.id,
       wa_message_id: waMessageId,
@@ -334,6 +366,14 @@ async function handleMessagesUpsert(
     // Increment unread counter
     await supabaseAdmin.rpc('increment_unread', { conv_id: conversation.id });
 
+    // If client replied, any outgoing messages still in 'sent' must have been delivered
+    await supabaseAdmin
+      .from('whatsapp_messages')
+      .update({ status: 'delivered' })
+      .eq('conversation_id', conversation.id)
+      .eq('from_me', true)
+      .eq('status', 'sent');
+
     // Update conversation metadata
     const conversationUpdate: Record<string, unknown> = {
       last_message: content || `[${mediaInfo.mediaType ?? 'media'}]`,
@@ -350,10 +390,11 @@ async function handleMessagesUpsert(
       .eq('id', conversation.id);
 
     // ── Bot logic (with configurable debounce) ─────────────────────────────
-    const conversationPaused = conversation.is_bot_paused;
+    // Per-conversation toggle is the authority. Global pause only affects new conversations.
+    const botActive = !conversation.is_bot_paused;
     const debounceSeconds = parseInt(process.env.WHATSAPP_DEBOUNCE_SECONDS ?? '10', 10);
 
-    if (!conversationPaused) {
+    if (botActive) {
       // Update pending timestamp — resets on each new message
       const pendingTimestamp = new Date().toISOString();
       await supabaseAdmin
@@ -379,38 +420,9 @@ async function handleMessagesUpsert(
       }
     }
 
-    // ── AI processing (after debounce is triggered) ────────────────────────
-    // Transcribe audio or describe images, then update the saved message
-    if (mediaInfo.mediaUrl) {
-      let aiContent: string | null = null;
-
-      if (mediaInfo.mediaType === 'audio' && !content) {
-        const transcription = await transcribeAudio(mediaInfo.mediaUrl);
-        if (transcription) {
-          aiContent = `[Audio transcrito]: ${transcription}`;
-        }
-      } else if (mediaInfo.mediaType === 'image') {
-        const description = await describeImage(mediaInfo.mediaUrl, content || undefined);
-        if (description) {
-          aiContent = content
-            ? `${content}\n[Foto del cliente]: ${description}`
-            : `[Foto del cliente]: ${description}`;
-        }
-      }
-
-      if (aiContent) {
-        await supabaseAdmin
-          .from('whatsapp_messages')
-          .update({ content: aiContent })
-          .eq('wa_message_id', waMessageId);
-        // Update content for memory save below
-        content = aiContent;
-      }
-    }
-
     // Save client message to N8N memory when bot is paused
     // (when bot is active, N8N saves it via Postgres Chat Memory node)
-    if (conversationPaused) {
+    if (!botActive) {
       const sessionId = `wa_${conversation.id}`;
       const memoryContent = content || `[${mediaInfo.mediaType ?? 'media'}]`;
       await saveN8nChatHistory(sessionId, 'human', `[Cliente]: ${memoryContent}`);

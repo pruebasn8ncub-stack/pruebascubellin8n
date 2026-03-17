@@ -159,6 +159,8 @@ export default function WhatsAppPage() {
         setMessages([]);
         setHasMore(false);
 
+        const abortController = new AbortController();
+
         const fetchMessages = async () => {
             // Optimistically clear unread count immediately
             setConversations((prev) =>
@@ -169,21 +171,29 @@ export default function WhatsAppPage() {
 
             // Fetch messages and mark-read in parallel
             const [res] = await Promise.all([
-                apiFetch(`/api/whatsapp/messages/${selectedId}?limit=30`),
+                apiFetch(`/api/whatsapp/messages/${selectedId}?limit=30`, {
+                    signal: abortController.signal,
+                }),
                 apiFetch("/api/whatsapp/mark-read", {
                     method: "POST",
                     body: JSON.stringify({ conversationId: selectedId }),
+                    signal: abortController.signal,
                 }),
             ]);
 
-            if (res.ok) {
+            // Only update state if this request wasn't aborted (user switched conversation)
+            if (!abortController.signal.aborted && res.ok) {
                 const json: MessagesResponse = await res.json();
                 setMessages(json.data.messages);
                 setHasMore(json.data.hasMore);
             }
         };
 
-        fetchMessages();
+        fetchMessages().catch(() => {
+            // Silently ignore abort errors
+        });
+
+        return () => abortController.abort();
     }, [selectedId, apiFetch]);
 
     // -----------------------------------------------------------------------
@@ -209,17 +219,18 @@ export default function WhatsAppPage() {
                     // If the message belongs to the currently-selected conversation
                     if (newMsg.conversation_id === selectedIdRef.current) {
                         setMessages((prev) => {
+                            // Skip if message already exists (duplicate realtime event)
+                            if (prev.some((m) => m.id === newMsg.id)) return prev;
+
                             // Check if this is replacing an optimistic (temp) message
-                            const hasOptimistic = prev.some(
+                            // Match the OLDEST temp message with same content and sender type
+                            const optimisticIdx = prev.findIndex(
                                 (m) => m.id.startsWith("temp-") && m.content === newMsg.content && m.sender_type === newMsg.sender_type
                             );
-                            if (hasOptimistic) {
-                                // Replace the optimistic message with the real one
-                                return prev.map((m) =>
-                                    m.id.startsWith("temp-") && m.content === newMsg.content && m.sender_type === newMsg.sender_type
-                                        ? newMsg
-                                        : m
-                                );
+                            if (optimisticIdx !== -1) {
+                                const updated = [...prev];
+                                updated[optimisticIdx] = newMsg;
+                                return updated;
                             }
                             // Otherwise append (new message from client or bot)
                             return [...prev, newMsg];
@@ -272,12 +283,18 @@ export default function WhatsAppPage() {
                 },
                 (payload) => {
                     const updated = payload.new as WhatsAppMessage;
-                    // Update message status (ticks: sent → delivered → read)
+                    // Update message fields (status ticks, transcription, media URL)
                     if (updated.conversation_id === selectedIdRef.current) {
                         setMessages((prev) =>
                             prev.map((m) =>
                                 m.wa_message_id === updated.wa_message_id
-                                    ? { ...m, status: updated.status }
+                                    ? {
+                                          ...m,
+                                          status: updated.status,
+                                          content: updated.content ?? m.content,
+                                          media_url: updated.media_url ?? m.media_url,
+                                          media_mime_type: updated.media_mime_type ?? m.media_mime_type,
+                                      }
                                     : m
                             )
                         );
@@ -339,7 +356,7 @@ export default function WhatsAppPage() {
         if (!selectedId) return;
 
         // Optimistic: show message immediately with "pending" status
-        const tempId = `temp-${Date.now()}`;
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const optimisticMsg: WhatsAppMessage = {
             id: tempId,
             conversation_id: selectedId,
@@ -458,7 +475,7 @@ export default function WhatsAppPage() {
     // Render
     // -----------------------------------------------------------------------
 
-    if (loading) {
+    if (loading || !botSettings) {
         return (
             <div className="h-full flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-teal" />
@@ -481,7 +498,7 @@ export default function WhatsAppPage() {
                 conversations={conversations}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
-                botSettings={botSettings!}
+                botSettings={botSettings}
                 userRole={userRole}
                 onGlobalToggle={handleGlobalToggle}
             />
@@ -489,7 +506,7 @@ export default function WhatsAppPage() {
                 <ChatPanel
                     conversation={selectedConversation}
                     messages={messages}
-                    botSettings={botSettings!}
+                    botSettings={botSettings}
                     userRole={userRole}
                     onSendMessage={handleSendMessage}
                     onBotPause={handleBotPause}

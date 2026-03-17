@@ -274,7 +274,7 @@ export async function downloadAndStoreMedia(
   fromMe: boolean,
   conversationId: string,
   mediaType: string
-): Promise<{ url: string; mimeType: string } | null> {
+): Promise<{ url: string; mimeType: string; dataUri: string } | null> {
   try {
     const instance = getEnv('EVOLUTION_INSTANCE_NAME');
     const response = await evolutionFetch(
@@ -286,6 +286,8 @@ export async function downloadAndStoreMedia(
             key: { id: messageId, remoteJid, fromMe },
           },
         }),
+        // Media downloads can be large — use 25s timeout instead of default 10s
+        signal: AbortSignal.timeout(25000),
       }
     );
 
@@ -318,16 +320,19 @@ export async function downloadAndStoreMedia(
         upsert: true,
       });
 
+    const dataUri = `data:${mimeType};base64,${base64}`;
+
     if (error) {
       console.error('[Storage upload error]', error.message);
-      return null;
+      // Fallback to base64 data URI when Storage is unavailable
+      return { url: dataUri, mimeType, dataUri };
     }
 
     const { data: urlData } = supabaseAdmin.storage
       .from('whatsapp-media')
       .getPublicUrl(filePath);
 
-    return { url: urlData.publicUrl, mimeType };
+    return { url: urlData.publicUrl, mimeType, dataUri };
   } catch {
     return null;
   }
