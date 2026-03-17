@@ -130,6 +130,18 @@ export default function WhatsAppPage() {
         };
 
         init();
+
+        // Auto-refresh token when Supabase renews the session
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (_event, session) => {
+                if (session?.access_token) {
+                    setAccessToken(session.access_token);
+                    accessTokenRef.current = session.access_token;
+                }
+            }
+        );
+
+        return () => subscription.unsubscribe();
     }, []);
 
     // -----------------------------------------------------------------------

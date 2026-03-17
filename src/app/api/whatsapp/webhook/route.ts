@@ -393,7 +393,17 @@ async function handleMessagesUpsert(
           .from('whatsapp_messages')
           .update({ content: aiContent })
           .eq('wa_message_id', waMessageId);
+        // Update content for memory save below
+        content = aiContent;
       }
+    }
+
+    // Save client message to N8N memory when bot is paused
+    // (when bot is active, N8N saves it via Postgres Chat Memory node)
+    if (conversationPaused) {
+      const sessionId = `wa_${conversation.id}`;
+      const memoryContent = content || `[${mediaInfo.mediaType ?? 'media'}]`;
+      await saveN8nChatHistory(sessionId, 'human', `[Cliente]: ${memoryContent}`);
     }
   } else {
     // ── Outgoing message (fromMe = true) ─────────────────────────────────────
