@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import {
+    playIncomingSound,
+    playOutgoingSound,
+    playNotificationSound,
+} from "@/lib/whatsapp-sounds";
 import type {
     WhatsAppConversation,
     WhatsAppMessage,
@@ -189,6 +194,16 @@ export default function WhatsAppPage() {
                     // If the message belongs to the currently-selected conversation, append it
                     if (newMsg.conversation_id === selectedIdRef.current) {
                         setMessages((prev) => [...prev, newMsg]);
+
+                        // Play sound based on message direction
+                        if (!newMsg.from_me) {
+                            playIncomingSound();
+                        } else if (newMsg.sender_type === "bot") {
+                            playOutgoingSound();
+                        }
+                    } else if (!newMsg.from_me) {
+                        // Incoming message in a background conversation
+                        playNotificationSound();
                     }
 
                     // Update the conversation list entry
@@ -264,11 +279,14 @@ export default function WhatsAppPage() {
 
     const handleSendMessage = async (content: string) => {
         if (!selectedId) return;
-        await apiFetch("/api/whatsapp/send", {
+        const res = await apiFetch("/api/whatsapp/send", {
             method: "POST",
             body: JSON.stringify({ conversationId: selectedId, content }),
         });
-        // The new message will arrive via the Realtime subscription
+        // Play outgoing sound on success; the new message arrives via Realtime
+        if (res.ok) {
+            playOutgoingSound();
+        }
     };
 
     const handleBotPause = async (

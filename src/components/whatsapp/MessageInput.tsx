@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, KeyboardEvent, ChangeEvent } from "react";
-import { Paperclip, Send } from "lucide-react";
+import { useRef, useState, useEffect, KeyboardEvent, ChangeEvent } from "react";
+import { Paperclip, Send, Smile } from "lucide-react";
+import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
@@ -11,7 +12,23 @@ interface MessageInputProps {
 
 export default function MessageInput({ onSend, disabled = false }: MessageInputProps) {
     const [value, setValue] = useState("");
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const emojiPickerRef = useRef<HTMLDivElement>(null);
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                emojiPickerRef.current &&
+                !emojiPickerRef.current.contains(e.target as Node)
+            ) {
+                setShowEmojiPicker(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     function resizeTextarea() {
         const el = textareaRef.current;
@@ -44,13 +61,51 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
         }
     }
 
+    function handleEmojiClick(emojiData: EmojiClickData) {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const newValue =
+                value.slice(0, start) + emojiData.emoji + value.slice(end);
+            setValue(newValue);
+            // Restore cursor position after the inserted emoji
+            setTimeout(() => {
+                textarea.selectionStart = textarea.selectionEnd =
+                    start + emojiData.emoji.length;
+                textarea.focus();
+            }, 0);
+        } else {
+            setValue((prev) => prev + emojiData.emoji);
+        }
+        setShowEmojiPicker(false);
+    }
+
     return (
         <div
             className={cn(
-                "flex items-end gap-3 bg-white border-t border-slate-200 px-5 py-3",
+                "relative flex items-end gap-3 bg-[#f0f2f5] border-t border-slate-200 px-5 py-3",
                 disabled && "opacity-50"
             )}
         >
+            {/* Emoji picker floating panel */}
+            {showEmojiPicker && (
+                <div
+                    ref={emojiPickerRef}
+                    className="absolute bottom-full left-4 mb-2 z-50"
+                >
+                    <EmojiPicker
+                        onEmojiClick={handleEmojiClick}
+                        theme={Theme.LIGHT}
+                        width={350}
+                        height={400}
+                        searchPlaceHolder="Buscar emoji..."
+                        previewConfig={{ showPreview: false }}
+                    />
+                </div>
+            )}
+
+            {/* Paperclip button */}
             <button
                 type="button"
                 disabled={disabled}
@@ -58,6 +113,22 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-slate-400 hover:text-[#00b4a6] transition-colors rounded-full"
             >
                 <Paperclip className="w-5 h-5" />
+            </button>
+
+            {/* Emoji picker toggle button */}
+            <button
+                type="button"
+                disabled={disabled}
+                aria-label="Insertar emoji"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                className={cn(
+                    "flex-shrink-0 w-9 h-9 flex items-center justify-center transition-colors rounded-full",
+                    showEmojiPicker
+                        ? "text-[#00b4a6]"
+                        : "text-slate-400 hover:text-[#00b4a6]"
+                )}
+            >
+                <Smile className="w-5 h-5" />
             </button>
 
             <textarea
@@ -69,7 +140,7 @@ export default function MessageInput({ onSend, disabled = false }: MessageInputP
                 disabled={disabled}
                 placeholder="Escribe un mensaje..."
                 className={cn(
-                    "flex-1 resize-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-[#0d1f35]",
+                    "flex-1 resize-none bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm text-[#0d1f35]",
                     "placeholder:text-[#5e7a9a] focus:outline-none focus:ring-2 focus:ring-[#00b4a6]/30 focus:border-[#00b4a6]",
                     "transition-all overflow-y-auto leading-6"
                 )}

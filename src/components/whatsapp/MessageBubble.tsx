@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, Clock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppMessage, SenderType } from "@/types/whatsapp";
 
@@ -15,28 +15,63 @@ function formatTimestamp(ts: string): string {
     return `${h}:${m}`;
 }
 
+// Filled-path SVG single check (WhatsApp style)
+function SingleCheck({ colorClass }: { colorClass: string }) {
+    return (
+        <svg
+            viewBox="0 0 16 11"
+            width="16"
+            height="11"
+            className={cn("inline-block ml-1 flex-shrink-0", colorClass)}
+        >
+            <path
+                d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.311.31a.445.445 0 0 0-.14.337c0 .136.046.25.14.343l2.996 2.996a.724.724 0 0 0 .508.228.695.695 0 0 0 .527-.242l6.641-8.112a.434.434 0 0 0 .108-.326.398.398 0 0 0-.14-.3z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
+// Filled-path SVG double check (WhatsApp style)
+function DoubleCheck({ colorClass }: { colorClass: string }) {
+    return (
+        <svg
+            viewBox="0 0 16 11"
+            width="16"
+            height="11"
+            className={cn("inline-block ml-1 flex-shrink-0", colorClass)}
+        >
+            <path
+                d="M11.071.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178l-6.19 7.636-2.405-2.272a.463.463 0 0 0-.336-.146.47.47 0 0 0-.343.146l-.311.31a.445.445 0 0 0-.14.337c0 .136.046.25.14.343l2.996 2.996a.724.724 0 0 0 .508.228.695.695 0 0 0 .527-.242l6.641-8.112a.434.434 0 0 0 .108-.326.398.398 0 0 0-.14-.3z"
+                fill="currentColor"
+            />
+            <path
+                d="M7.404.653a.457.457 0 0 0-.304-.102.493.493 0 0 0-.381.178L.529 8.365l.532.532 6.641-8.112a.434.434 0 0 0 .108-.326.398.398 0 0 0-.14-.3z"
+                fill="currentColor"
+                opacity="0.75"
+            />
+        </svg>
+    );
+}
+
 function DeliveryTicks({ status }: { status: WhatsAppMessage["status"] }) {
-    if (status === "sent") {
+    if (status === "pending") {
         return (
-            <svg className="inline w-3.5 h-3.5 text-black/40" viewBox="0 0 16 11" fill="none">
-                <path d="M1 5.5L5.5 10L15 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <Clock className="inline-block ml-1 flex-shrink-0 w-3 h-3 text-black/40" />
         );
+    }
+    if (status === "sent") {
+        return <SingleCheck colorClass="text-gray-400" />;
     }
     if (status === "delivered") {
-        return (
-            <svg className="inline w-4 h-3.5 text-black/40" viewBox="0 0 20 11" fill="none">
-                <path d="M1 5.5L5.5 10L15 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 5.5L10.5 10L20 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-        );
+        return <DoubleCheck colorClass="text-gray-400" />;
     }
     if (status === "read") {
+        return <DoubleCheck colorClass="text-[#53bdeb]" />;
+    }
+    if (status === "failed") {
         return (
-            <svg className="inline w-4 h-3.5" viewBox="0 0 20 11" fill="none">
-                <path d="M1 5.5L5.5 10L15 1" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 5.5L10.5 10L20 1" stroke="#53bdeb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <X className="inline-block ml-1 flex-shrink-0 w-3.5 h-3.5 text-red-500" />
         );
     }
     return null;

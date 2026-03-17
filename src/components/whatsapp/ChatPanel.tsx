@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
 import BotStatusBar from "./BotStatusBar";
 import MessageBubble from "./MessageBubble";
@@ -78,6 +78,7 @@ export default function ChatPanel({
 }: ChatPanelProps) {
     const [showPausePopup, setShowPausePopup] = useState(false);
     const [showResumePopup, setShowResumePopup] = useState(false);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +86,25 @@ export default function ChatPanel({
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages.length]);
+
+    // Track scroll position to show/hide the scroll-to-bottom button
+    useEffect(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const distanceFromBottom =
+                container.scrollHeight - container.scrollTop - container.clientHeight;
+            setShowScrollButton(distanceFromBottom > 200);
+        };
+
+        container.addEventListener("scroll", handleScroll, { passive: true });
+        return () => container.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    function scrollToBottom() {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
 
     const initials = getInitials(conversation.contact_name);
 
@@ -132,47 +152,65 @@ export default function ChatPanel({
                 isGlobalPaused={botSettings.global_pause}
             />
 
-            {/* Messages area */}
-            <div
-                ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto px-[60px] py-5"
-                style={{ backgroundColor: "#efeae2" }}
-            >
-                {/* Load more */}
-                {hasMore && (
-                    <div className="flex justify-center mb-4">
-                        <button
-                            type="button"
-                            onClick={onLoadMore}
-                            disabled={isLoadingMore}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-sm text-[#5e7a9a] shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-60"
-                        >
-                            {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-                            Cargar mas...
-                        </button>
-                    </div>
-                )}
-
-                {/* Messages with date dividers */}
-                {messages.map((msg, index) => {
-                    const prev = messages[index - 1];
-                    const showDivider = !prev || !isSameDay(prev.created_at, msg.created_at);
-
-                    return (
-                        <div key={msg.id}>
-                            {showDivider && (
-                                <div className="flex justify-center my-3">
-                                    <span className="bg-white text-[#5e7a9a] text-xs px-3 py-1 rounded-full shadow-sm">
-                                        {formatDateDivider(msg.created_at)}
-                                    </span>
-                                </div>
-                            )}
-                            <MessageBubble message={msg} />
+            {/* Messages area — relative so the scroll button can be positioned inside */}
+            <div className="flex-1 relative overflow-hidden">
+                <div
+                    ref={messagesContainerRef}
+                    className="h-full overflow-y-auto px-[60px] py-5"
+                    style={{
+                        backgroundColor: "#efeae2",
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23d5cfc7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round' opacity='0.55'%3E%3Crect x='6' y='6' width='18' height='12' rx='3'/%3E%3Cpolygon points='10,18 8,23 14,18'/%3E%3Ccircle cx='10' cy='12' r='1.2'/%3E%3Ccircle cx='15' cy='12' r='1.2'/%3E%3Ccircle cx='20' cy='12' r='1.2'/%3E%3Cpath d='M53 11 c0-2-2-4-4-2 c-2-2-4 0-4 2 c0 3 4 6 4 6 s4-3 4-6z'/%3E%3Cpolygon points='67,6 68.5,10.5 73,10.5 69.5,13 71,17.5 67,15 63,17.5 64.5,13 61,10.5 65.5,10.5'/%3E%3Ccircle cx='15' cy='58' r='7'/%3E%3Ccircle cx='12.5' cy='56' r='1'/%3E%3Ccircle cx='17.5' cy='56' r='1'/%3E%3Cpath d='M11.5 60 q3.5 3 7 0'/%3E%3Cpath d='M57 48 q-1-1 0-3 l2-3 q1-1 2 0 l2 2 q1 1-1 4 q-3 4-7 7 q-3 2-4 1 l-2-2 q-1-1 0-2 l3-2 q2-1 3 0 l1 1 q2-2 1-3z'/%3E%3Ccircle cx='68' cy='55' r='2.5'/%3E%3Ccircle cx='68' cy='49.5' r='2'/%3E%3Ccircle cx='68' cy='60.5' r='2'/%3E%3Ccircle cx='62.5' cy='55' r='2'/%3E%3Ccircle cx='73.5' cy='55' r='2'/%3E%3C/g%3E%3C/svg%3E")`,
+                        backgroundRepeat: "repeat",
+                    }}
+                >
+                    {/* Load more */}
+                    {hasMore && (
+                        <div className="flex justify-center mb-4">
+                            <button
+                                type="button"
+                                onClick={onLoadMore}
+                                disabled={isLoadingMore}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-sm text-[#5e7a9a] shadow-sm hover:bg-slate-50 transition-colors disabled:opacity-60"
+                            >
+                                {isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Cargar mas...
+                            </button>
                         </div>
-                    );
-                })}
+                    )}
 
-                <div ref={messagesEndRef} />
+                    {/* Messages with date dividers */}
+                    {messages.map((msg, index) => {
+                        const prev = messages[index - 1];
+                        const showDivider = !prev || !isSameDay(prev.created_at, msg.created_at);
+
+                        return (
+                            <div key={msg.id}>
+                                {showDivider && (
+                                    <div className="flex justify-center my-3">
+                                        <span className="bg-white text-[#5e7a9a] text-xs px-3 py-1 rounded-full shadow-sm">
+                                            {formatDateDivider(msg.created_at)}
+                                        </span>
+                                    </div>
+                                )}
+                                <MessageBubble message={msg} />
+                            </div>
+                        );
+                    })}
+
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Scroll-to-bottom floating button */}
+                {showScrollButton && (
+                    <button
+                        type="button"
+                        onClick={scrollToBottom}
+                        aria-label="Ir al mensaje más reciente"
+                        className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-[#5e7a9a] hover:bg-slate-50 transition-colors z-10"
+                    >
+                        <ChevronDown className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* Message Input */}
