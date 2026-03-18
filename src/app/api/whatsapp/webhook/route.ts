@@ -269,15 +269,9 @@ async function handleMessagesUpsert(
   // Respect testing filter
   if (!isTestingAllowed(phone)) return;
 
-  let content = extractTextContent(rawMessage);
-  const mediaInfo = extractMediaInfo(rawMessage);
-  const messageType =
-    mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
-
-  // Only use pushName for incoming messages — for outgoing (fromMe), pushName is our own name
+  // ── Shared setup (used by both reaction and normal paths) ──
   const conversation = await findOrCreateConversation(jid, phone, fromMe ? undefined : pushName);
 
-  const hasMedia = !!(mediaInfo.mediaType && waMessageId && jid);
   const botActive = !fromMe && !conversation.is_bot_paused;
   const debounceSeconds = parseInt(process.env.WHATSAPP_DEBOUNCE_SECONDS ?? '10', 10);
   const debounceUrl = process.env.N8N_DEBOUNCE_WEBHOOK_URL;
@@ -305,6 +299,115 @@ async function handleMessagesUpsert(
     }
     return ts;
   }
+
+  // ── Check for reaction BEFORE text/media extraction ──
+  const reactionInfo = extractReactionInfo(rawMessage);
+
+  if (reactionInfo) {
+    // Format sync: MessageBubble.tsx parses this content format — keep both in sync.
+
+    // Idempotency check
+    if (waMessageId) {
+      const { data: existingMsg } = await supabaseAdmin
+        .from('whatsapp_messages')
+        .select('id')
+        .eq('wa_message_id', waMessageId)
+        .single();
+      if (existingMsg) return;
+    }
+
+    // Look up the referenced message to provide context
+    let reactionContent = `Reaccionó ${reactionInfo.emoji}`;
+    if (reactionInfo.reactedMessageId) {
+      const { data: refMsg } = await supabaseAdmin
+        .from('whatsapp_messages')
+        .select('content')
+        .eq('wa_message_id', reactionInfo.reactedMessageId)
+        .single();
+      const refText = refMsg?.content?.trim();
+      if (refText) {
+        const truncated = refText.length > 50 ? refText.slice(0, 50) + '...' : refText;
+        reactionContent = `Reaccionó ${reactionInfo.emoji} a: "${truncated}"`;
+      }
+    }
+
+    // Insert reaction message
+    await supabaseAdmin.from('whatsapp_messages').insert({
+      conversation_id: conversation.id,
+      wa_message_id: waMessageId,
+      sender_type: fromMe ? 'admin' : 'client',
+      sender_id: null,
+      content: reactionContent,
+      media_type: null,
+      media_url: null,
+      media_mime_type: null,
+      message_type: 'reactionMessage',
+      status: fromMe ? 'sent' : 'delivered',
+      from_me: fromMe,
+    });
+
+    // Update conversation metadata
+    const conversationUpdate: Record<string, unknown> = {
+      last_message: reactionInfo.emoji,
+      last_message_at: new Date().toISOString(),
+      last_message_from_me: fromMe,
+      last_message_sender_type: fromMe ? 'admin' : 'client',
+    };
+    if (!fromMe && pushName && pushName !== conversation.contact_name) {
+      conversationUpdate.contact_name = pushName;
+    }
+    await supabaseAdmin
+      .from('whatsapp_conversations')
+      .update(conversationUpdate)
+      .eq('id', conversation.id);
+
+    if (!fromMe) {
+      // Increment unread
+      await supabaseAdmin.rpc('increment_unread', { conv_id: conversation.id });
+
+      // Mark outgoing 'sent' messages as 'delivered' (client is online)
+      await supabaseAdmin
+        .from('whatsapp_messages')
+        .update({ status: 'delivered' })
+        .eq('conversation_id', conversation.id)
+        .eq('from_me', true)
+        .eq('status', 'sent');
+
+      // Bot debounce
+      if (botActive) {
+        await setPendingAndFireDebounce();
+      }
+
+      // Save to N8N memory when bot is paused
+      if (!botActive) {
+        const sessionId = `wa_${conversation.id}`;
+        await saveN8nChatHistory(sessionId, 'human', `[Cliente]: ${reactionContent}`);
+      }
+    } else {
+      // Outgoing reaction: auto-pause bot + save to N8N
+      await supabaseAdmin
+        .from('whatsapp_conversations')
+        .update({
+          is_bot_paused: true,
+          paused_by: null,
+          paused_at: new Date().toISOString(),
+          bot_pending_since: null,
+        })
+        .eq('id', conversation.id);
+
+      const sessionId = `wa_${conversation.id}`;
+      await saveN8nChatHistory(sessionId, 'human', `[Agente Humano]: ${reactionContent}`);
+    }
+
+    return; // Done — skip normal text/media flow
+  }
+
+  // ── Normal message flow (non-reaction) ──
+  let content = extractTextContent(rawMessage);
+  const mediaInfo = extractMediaInfo(rawMessage);
+  const messageType =
+    mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
+  const hasMedia = !!(mediaInfo.mediaType && waMessageId && jid);
 
   // ── Idempotency check BEFORE media processing (avoid wasting API calls) ──
   if (!fromMe && waMessageId) {
