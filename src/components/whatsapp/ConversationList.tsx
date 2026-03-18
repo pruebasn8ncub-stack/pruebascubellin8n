@@ -24,6 +24,8 @@ export default function ConversationList({
     onGlobalToggle,
 }: ConversationListProps) {
     const [search, setSearch] = useState("");
+    const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
+    const [botFilter, setBotFilter] = useState<"all" | "active" | "paused">("all");
     const [headerShadow, setHeaderShadow] = useState(false);
     const [togglePressed, setTogglePressed] = useState(false);
     const listRef = useRef<HTMLDivElement>(null);
@@ -42,12 +44,20 @@ export default function ConversationList({
 
     const filtered = conversations
         .filter((c) => {
-            if (!search.trim()) return true;
-            const q = search.toLowerCase();
-            return (
-                c.contact_name.toLowerCase().includes(q) ||
-                c.phone_number.toLowerCase().includes(q)
-            );
+            // Search filter
+            if (search.trim()) {
+                const q = search.toLowerCase();
+                if (!c.contact_name.toLowerCase().includes(q) && !c.phone_number.toLowerCase().includes(q)) {
+                    return false;
+                }
+            }
+            // Read/unread filter
+            if (readFilter === "unread" && c.unread_count === 0) return false;
+            if (readFilter === "read" && c.unread_count > 0) return false;
+            // Bot filter
+            if (botFilter === "active" && c.is_bot_paused) return false;
+            if (botFilter === "paused" && !c.is_bot_paused) return false;
+            return true;
         })
         .sort(
             (a, b) =>
@@ -107,6 +117,51 @@ export default function ConversationList({
                             "transition-all"
                         )}
                     />
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                    {/* Read filters */}
+                    {(["all", "unread", "read"] as const).map((v) => {
+                        const labels = { all: "Todos", unread: "No leídos", read: "Leídos" };
+                        return (
+                            <button
+                                key={v}
+                                type="button"
+                                onClick={() => setReadFilter(readFilter === v ? "all" : v)}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-lg text-[0.68rem] font-medium transition-all",
+                                    readFilter === v
+                                        ? "bg-teal/10 text-teal border border-teal/20"
+                                        : "bg-[#f5f8fc] text-[#5e7a9a] border border-transparent hover:bg-[#edf2f7]"
+                                )}
+                            >
+                                {labels[v]}
+                            </button>
+                        );
+                    })}
+                    <div className="w-px h-5 bg-slate-200 self-center mx-0.5" />
+                    {/* Bot filters */}
+                    {(["active", "paused"] as const).map((v) => {
+                        const labels = { active: "Bot activo", paused: "Bot pausado" };
+                        return (
+                            <button
+                                key={v}
+                                type="button"
+                                onClick={() => setBotFilter(botFilter === v ? "all" : v)}
+                                className={cn(
+                                    "px-2.5 py-1 rounded-lg text-[0.68rem] font-medium transition-all",
+                                    botFilter === v
+                                        ? v === "active"
+                                            ? "bg-teal/10 text-teal border border-teal/20"
+                                            : "bg-red-50 text-red-400 border border-red-200/50"
+                                        : "bg-[#f5f8fc] text-[#5e7a9a] border border-transparent hover:bg-[#edf2f7]"
+                                )}
+                            >
+                                {labels[v]}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
