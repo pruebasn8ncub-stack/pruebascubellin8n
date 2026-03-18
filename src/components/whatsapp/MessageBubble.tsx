@@ -432,6 +432,21 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         return <ReactionBubble message={message} />;
     }
 
+    // Sticker messages — no bubble, floating timestamp over the sticker
+    if (isSticker) {
+        return (
+            <div className={cn("flex my-1", config.align)}>
+                <div className="relative inline-block">
+                    <MediaContent message={message} />
+                    <span className="absolute bottom-1 right-1 bg-black/50 backdrop-blur-sm text-white text-[0.6rem] px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                        {formatTimestamp(message.created_at)}
+                        {isFromMe && <DeliveryTicks status={message.status} />}
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
     const { displayText, transcription } = parseContent(message.content, message.media_type);
     const hasMedia = !!message.media_type;
 
@@ -440,9 +455,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             <div
                 className={cn(
                     "max-w-[70%]",
-                    isSticker ? "p-1" : hasMedia ? "p-1.5" : "px-3 py-2",
-                    !isSticker && config.bubble,
-                    !isSticker && config.roundedClass,
+                    hasMedia ? "p-1.5" : "px-3 py-2",
+                    config.bubble,
+                    config.roundedClass,
                     isFailed && "ring-2 ring-red-200"
                 )}
             >
@@ -489,21 +504,12 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 )}
 
                 {/* Timestamp + ticks */}
-                {isSticker ? (
-                    <div className="flex justify-end -mt-5 mr-1 relative z-10">
-                        <span className="bg-black/40 backdrop-blur-sm text-white text-[0.6rem] px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                            {formatTimestamp(message.created_at)}
-                            {isFromMe && <DeliveryTicks status={message.status} />}
-                        </span>
-                    </div>
-                ) : (
-                    <div className={cn("flex items-center justify-end gap-1 mt-0.5", hasMedia ? "px-2 pb-1" : "")}>
-                        <span className="text-[0.6rem] text-[var(--text-muted)]/60">
-                            {formatTimestamp(message.created_at)}
-                        </span>
-                        {isFromMe && <DeliveryTicks status={message.status} />}
-                    </div>
-                )}
+                <div className={cn("flex items-center justify-end gap-1 mt-0.5", hasMedia ? "px-2 pb-1" : "")}>
+                    <span className="text-[0.6rem] text-[var(--text-muted)]/60">
+                        {formatTimestamp(message.created_at)}
+                    </span>
+                    {isFromMe && <DeliveryTicks status={message.status} />}
+                </div>
             </div>
         </div>
     );
