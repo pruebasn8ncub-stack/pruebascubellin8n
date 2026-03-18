@@ -115,34 +115,6 @@ async function findOrCreateConversation(
   return created as WhatsAppConversation;
 }
 
-async function callN8nWebhook(
-  content: string,
-  sessionId: string,
-  senderPhone: string,
-  senderName: string
-): Promise<string> {
-  const n8nUrl = process.env.N8N_WHATSAPP_WEBHOOK_URL;
-  if (!n8nUrl) throw new Error('N8N_WHATSAPP_WEBHOOK_URL is not configured');
-
-  const response = await fetch(n8nUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, sessionId, senderPhone, senderName }),
-    signal: AbortSignal.timeout(90000),
-  });
-
-  const n8nData = (await response.json()) as
-    | { output?: string }
-    | Array<{ output?: string }>;
-
-  const botReply =
-    (Array.isArray(n8nData)
-      ? n8nData[0]?.output
-      : n8nData.output) ?? '';
-
-  return botReply;
-}
-
 async function saveN8nChatHistory(
   sessionId: string,
   role: 'human' | 'ai',
@@ -304,10 +276,56 @@ async function handleMessagesUpsert(
   // Only use pushName for incoming messages — for outgoing (fromMe), pushName is our own name
   const conversation = await findOrCreateConversation(jid, phone, fromMe ? undefined : pushName);
 
-  // Download media and upload to Supabase Storage
+  const hasMedia = !!(mediaInfo.mediaType && waMessageId && jid);
+  const botActive = !fromMe && !conversation.is_bot_paused;
+  const debounceSeconds = parseInt(process.env.WHATSAPP_DEBOUNCE_SECONDS ?? '10', 10);
+  const debounceUrl = process.env.N8N_DEBOUNCE_WEBHOOK_URL;
+
+  // Helper: set pending timestamp and fire debounce timer
+  async function setPendingAndFireDebounce(): Promise<string> {
+    const ts = new Date().toISOString();
+    await supabaseAdmin
+      .from('whatsapp_conversations')
+      .update({ bot_pending_since: ts })
+      .eq('id', conversation.id);
+    if (debounceUrl) {
+      try {
+        await fetch(debounceUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            conversationId: conversation.id,
+            pendingTimestamp: ts,
+            debounceSeconds,
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+      } catch { /* N8N unavailable */ }
+    }
+    return ts;
+  }
+
+  // ── Idempotency check BEFORE media processing (avoid wasting API calls) ──
+  if (!fromMe && waMessageId) {
+    const { data: existingIncoming } = await supabaseAdmin
+      .from('whatsapp_messages')
+      .select('id')
+      .eq('wa_message_id', waMessageId)
+      .single();
+    if (existingIncoming) return;
+  }
+
+  // ── Early debounce signal: invalidate any pending timers while media processes
+  // This prevents the bot from responding to earlier text messages before this
+  // media message (audio/image) finishes downloading and transcribing/describing.
+  if (hasMedia && botActive) {
+    await setPendingAndFireDebounce();
+  }
+
+  // Download media and upload to Supabase Storage (SLOW: 3-25 seconds)
   let mediaDataUri: string | null = null;
-  if (mediaInfo.mediaType && waMessageId && jid) {
-    const stored = await downloadAndStoreMedia(waMessageId, rawJid, fromMe, conversation.id, mediaInfo.mediaType);
+  if (hasMedia) {
+    const stored = await downloadAndStoreMedia(waMessageId, rawJid, fromMe, conversation.id, mediaInfo.mediaType!);
     if (stored) {
       mediaInfo.mediaUrl = stored.url;
       mediaInfo.mediaMimeType = stored.mimeType;
@@ -318,7 +336,7 @@ async function handleMessagesUpsert(
     }
   }
 
-  // ── AI processing BEFORE insert so real-time gets full content
+  // ── AI processing BEFORE insert so real-time gets full content (SLOW: 2-15 seconds)
   if (!fromMe && mediaInfo.mediaUrl) {
     if (mediaInfo.mediaType === 'audio' && !content) {
       const transcription = await transcribeAudio(mediaDataUri ?? mediaInfo.mediaUrl);
@@ -338,16 +356,6 @@ async function handleMessagesUpsert(
 
   if (!fromMe) {
     // ── Incoming client message ──────────────────────────────────────────────
-
-    // Idempotency: skip if this message was already processed (webhook retry)
-    if (waMessageId) {
-      const { data: existingIncoming } = await supabaseAdmin
-        .from('whatsapp_messages')
-        .select('id')
-        .eq('wa_message_id', waMessageId)
-        .single();
-      if (existingIncoming) return;
-    }
 
     await supabaseAdmin.from('whatsapp_messages').insert({
       conversation_id: conversation.id,
@@ -391,33 +399,11 @@ async function handleMessagesUpsert(
 
     // ── Bot logic (with configurable debounce) ─────────────────────────────
     // Per-conversation toggle is the authority. Global pause only affects new conversations.
-    const botActive = !conversation.is_bot_paused;
-    const debounceSeconds = parseInt(process.env.WHATSAPP_DEBOUNCE_SECONDS ?? '10', 10);
-
     if (botActive) {
-      // Update pending timestamp — resets on each new message
-      const pendingTimestamp = new Date().toISOString();
-      await supabaseAdmin
-        .from('whatsapp_conversations')
-        .update({ bot_pending_since: pendingTimestamp })
-        .eq('id', conversation.id);
-
-      // Tell N8N to wait exactly X seconds then process
-      const debounceUrl = process.env.N8N_DEBOUNCE_WEBHOOK_URL;
-      if (debounceUrl) {
-        try {
-          await fetch(debounceUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              conversationId: conversation.id,
-              pendingTimestamp,
-              debounceSeconds,
-            }),
-            signal: AbortSignal.timeout(5000),
-          });
-        } catch { /* N8N unavailable — process-pending fallback */ }
-      }
+      // Set pending timestamp and fire debounce — resets on each new message.
+      // For media messages this is the SECOND fire (first was early, before processing).
+      // The new timestamp invalidates the early timer, starting a fresh debounce cycle.
+      await setPendingAndFireDebounce();
     }
 
     // Save client message to N8N memory when bot is paused

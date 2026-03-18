@@ -125,17 +125,17 @@ export async function processPendingBotReplies(
       .gt('created_at', sinceTime)
       .order('created_at', { ascending: true });
 
-    // Build text content (skip image description prefixes — Gemini will see the image directly)
+    // Build text content — preserve AI image descriptions for memory context
     const textParts: string[] = [];
     const imageMessages: Array<{ url: string; mime: string }> = [];
 
     for (const m of clientMsgs ?? []) {
       if (m.media_type === 'image' && m.media_url) {
         imageMessages.push({ url: m.media_url, mime: m.media_mime_type ?? 'image/jpeg' });
-        // Only add caption text (not AI description)
-        if (m.content && !m.content.startsWith('[Imagen adjunta') && !m.content.startsWith('[Foto del cliente')) {
+        // Keep content (caption + AI description) so N8N memory retains image context
+        if (m.content) {
           textParts.push(m.content);
-        } else if (!m.content) {
+        } else {
           textParts.push('[El paciente envió una foto]');
         }
       } else if (m.content) {
