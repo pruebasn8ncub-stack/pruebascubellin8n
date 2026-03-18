@@ -13,6 +13,7 @@ import {
   extractTextContent,
   extractMediaInfo,
   extractReactionInfo,
+  unwrapMessage,
   parseJidToPhone,
   sendTextMessage,
   fetchProfilePicture,
@@ -403,8 +404,10 @@ async function handleMessagesUpsert(
   }
 
   // ── Normal message flow (non-reaction) ──
-  let content = extractTextContent(rawMessage);
-  const mediaInfo = extractMediaInfo(rawMessage);
+  // Unwrap ephemeralMessage, viewOnceMessage, etc. before extracting content/media
+  const unwrapped = unwrapMessage(rawMessage);
+  let content = extractTextContent(unwrapped);
+  const mediaInfo = extractMediaInfo(unwrapped);
   const messageType =
     mediaInfo.messageType ?? (rawMessage.conversation !== undefined ? 'conversation' : 'unknown');
   const hasMedia = !!(mediaInfo.mediaType && waMessageId && jid);

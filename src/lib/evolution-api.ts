@@ -64,6 +64,38 @@ export function extractReactionInfo(
   return { emoji, reactedMessageId };
 }
 
+/**
+ * Unwrap wrapper message types that nest the real message inside.
+ * WhatsApp wraps messages in ephemeralMessage (disappearing chats),
+ * viewOnceMessage/V2 (view-once photos/videos), and
+ * documentWithCaptionMessage.
+ *
+ * Returns the inner message if wrapped, or the original message if not.
+ */
+export function unwrapMessage(
+  message: Record<string, unknown>
+): Record<string, unknown> {
+  const wrapperKeys = [
+    'ephemeralMessage',
+    'viewOnceMessage',
+    'viewOnceMessageV2',
+    'viewOnceMessageV2Extension',
+    'documentWithCaptionMessage',
+  ];
+
+  for (const key of wrapperKeys) {
+    const wrapper = message[key];
+    if (wrapper && typeof wrapper === 'object') {
+      const inner = (wrapper as Record<string, unknown>).message;
+      if (inner && typeof inner === 'object') {
+        return inner as Record<string, unknown>;
+      }
+    }
+  }
+
+  return message;
+}
+
 // Shape returned by Evolution API for a sent message
 interface EvolutionSendResponse {
   key?: {
