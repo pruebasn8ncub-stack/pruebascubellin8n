@@ -489,12 +489,21 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 )}
 
                 {/* Timestamp + ticks */}
-                <div className={cn("flex items-center justify-end gap-1 mt-0.5", hasMedia ? "px-2 pb-1" : "")}>
-                    <span className="text-[0.6rem] text-[var(--text-muted)]/60">
-                        {formatTimestamp(message.created_at)}
-                    </span>
-                    {isFromMe && <DeliveryTicks status={message.status} />}
-                </div>
+                {isSticker ? (
+                    <div className="flex justify-end -mt-5 mr-1 relative z-10">
+                        <span className="bg-black/40 backdrop-blur-sm text-white text-[0.6rem] px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                            {formatTimestamp(message.created_at)}
+                            {isFromMe && <DeliveryTicks status={message.status} />}
+                        </span>
+                    </div>
+                ) : (
+                    <div className={cn("flex items-center justify-end gap-1 mt-0.5", hasMedia ? "px-2 pb-1" : "")}>
+                        <span className="text-[0.6rem] text-[var(--text-muted)]/60">
+                            {formatTimestamp(message.created_at)}
+                        </span>
+                        {isFromMe && <DeliveryTicks status={message.status} />}
+                    </div>
+                )}
             </div>
         </div>
     );
