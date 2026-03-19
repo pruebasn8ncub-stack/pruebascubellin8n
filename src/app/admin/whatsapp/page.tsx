@@ -61,11 +61,61 @@ export default function WhatsAppPage() {
         selectedIdRef.current = selectedId;
     }, [selectedId]);
 
+    // -----------------------------------------------------------------------
+    // Browser notifications + dynamic tab title
+    // -----------------------------------------------------------------------
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, []);
+
+    // Dynamic tab title with unread count
+    const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
+    useEffect(() => {
+        document.title = totalUnread > 0
+            ? `(${totalUnread}) WhatsApp — InnovaKine`
+            : "WhatsApp — InnovaKine";
+        return () => { document.title = "InnovaKine | Centro Clínico"; };
+    }, [totalUnread]);
+
+    // Ref to keep conversations current for notifications inside Realtime callbacks
+    const conversationsRef = useRef(conversations);
+    useEffect(() => {
+        conversationsRef.current = conversations;
+    }, [conversations]);
+
     // Ref to keep accessToken current for apiFetch used in callbacks
     const accessTokenRef = useRef<string>(accessToken);
     useEffect(() => {
         accessTokenRef.current = accessToken;
     }, [accessToken]);
+
+    // Send browser push notification for background messages
+    const sendBrowserNotification = useCallback((msg: WhatsAppMessage) => {
+        if (typeof window === "undefined" || !("Notification" in window)) return;
+        if (Notification.permission !== "granted") return;
+        if (document.hasFocus()) return; // Don't notify if tab is focused
+
+        const conv = conversationsRef.current.find((c) => c.id === msg.conversation_id);
+        const contactName = conv?.custom_name || conv?.contact_name || "Nuevo mensaje";
+        const body = msg.content || (msg.media_type ? `[${msg.media_type}]` : "Nuevo mensaje");
+
+        const notification = new Notification(contactName, {
+            body: body.length > 100 ? body.slice(0, 100) + "..." : body,
+            icon: "/images/logo_innovakine.png",
+            tag: msg.conversation_id, // Replaces previous notification from same conversation
+            silent: true, // Sound already handled by whatsapp-sounds
+        });
+
+        notification.onclick = () => {
+            window.focus();
+            setSelectedId(msg.conversation_id);
+            notification.close();
+        };
+    }, []);
 
     // -----------------------------------------------------------------------
     // API helper
@@ -242,12 +292,14 @@ export default function WhatsAppPage() {
                         // Play sound based on message direction
                         if (!newMsg.from_me) {
                             playIncomingSound();
+                            sendBrowserNotification(newMsg);
                         } else if (newMsg.sender_type === "bot") {
                             playOutgoingSound();
                         }
                     } else if (!newMsg.from_me) {
                         // Incoming message in a background conversation
                         playNotificationSound();
+                        sendBrowserNotification(newMsg);
                     }
 
                     // Update the conversation list entry
