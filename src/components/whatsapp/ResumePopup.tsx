@@ -30,7 +30,7 @@ export default function ResumePopup({ isOpen, onClose, onResume, defaultMessage 
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-lg font-bold text-[#0d1f35] mb-1">
-                            Reactivar Kini
+                            Reactivar chatbot
                         </h2>
                         <p className="text-sm text-[#5e7a9a] mb-6">
                             El chatbot volvera a responder en este chat automaticamente.

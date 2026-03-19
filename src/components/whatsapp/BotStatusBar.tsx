@@ -40,7 +40,7 @@ export default function BotStatusBar({ isBotPaused, isGlobalPaused }: BotStatusB
                 "bg-gradient-to-r from-teal/5 to-emerald-50 text-teal border-l-[3px] border-l-teal"
             )}>
                 <Bot className="w-3.5 h-3.5" />
-                Kini activo en este chat (global pausado)
+                Chatbot activo en este chat (global pausado)
             </div>
         );
     }
@@ -51,7 +51,7 @@ export default function BotStatusBar({ isBotPaused, isGlobalPaused }: BotStatusB
             "bg-gradient-to-r from-teal/5 to-emerald-50 text-teal border-l-[3px] border-l-teal"
         )}>
             <Bot className="w-3.5 h-3.5" />
-            Kini esta activo en esta conversacion
+            Chatbot activo en esta conversacion
         </div>
     );
 }

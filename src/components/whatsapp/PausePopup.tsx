@@ -30,7 +30,7 @@ export default function PausePopup({ isOpen, onClose, onPause, defaultMessage }:
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-lg font-bold text-[#0d1f35] mb-1">
-                            Pausar Kini en esta conversacion
+                            Pausar chatbot en esta conversacion
                         </h2>
                         <p className="text-sm text-[#5e7a9a] mb-6">
                             El chatbot dejara de responder en este chat. Podras reactivarlo cuando quieras.

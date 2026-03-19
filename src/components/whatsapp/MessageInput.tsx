@@ -209,7 +209,7 @@ export default function MessageInput({ onSend, isBotActive = false, disabled = f
                                     <Bot className="w-5 h-5 text-teal" />
                                 </div>
                                 <h2 className="text-lg font-bold text-[#0d1f35]">
-                                    Kini esta activo
+                                    Chatbot activo
                                 </h2>
                             </div>
                             <p className="text-sm text-[#5e7a9a] mb-6 ml-[52px]">

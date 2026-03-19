@@ -250,7 +250,7 @@ export default function ConversationList({
                             onClick={(e) => e.stopPropagation()}
                         >
                             <h2 className="text-lg font-bold text-[#0d1f35] mb-1">
-                                {botSettings.global_pause ? "Reactivar Kini globalmente" : "Pausar Kini globalmente"}
+                                {botSettings.global_pause ? "Reactivar chatbot globalmente" : "Pausar chatbot globalmente"}
                             </h2>
                             <p className="text-sm text-[#5e7a9a] mb-6">
                                 {botSettings.global_pause
