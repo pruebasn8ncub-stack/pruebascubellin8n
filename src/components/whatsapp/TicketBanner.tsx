@@ -62,7 +62,7 @@ export default function TicketBanner({ reason, since, contactName, onResolve, on
         if (!replyText.trim() || sending) return;
         setSending(true);
 
-        const fullMessage = `Hola ${contactName}, con respecto a tu consulta sobre "${subject.toLowerCase()}":\n\n${replyText.trim()}`;
+        const fullMessage = `Con respecto a tu consulta sobre "${subject.toLowerCase()}":\n\n${replyText.trim()}`;
         onReply(fullMessage);
         setSending(false);
     };
@@ -124,7 +124,7 @@ export default function TicketBanner({ reason, since, contactName, onResolve, on
                     {showReplyInput && (
                         <div className="space-y-2 pt-1">
                             <p className="text-[0.65rem] text-amber-700">
-                                Se enviara: &quot;Hola {contactName}, con respecto a tu consulta sobre &quot;{subject.toLowerCase()}&quot;: [tu respuesta]&quot;
+                                Se enviara: &quot;Con respecto a tu consulta sobre &quot;{subject.toLowerCase()}&quot;: [tu respuesta]&quot;
                             </p>
                             <textarea
                                 value={replyText}
