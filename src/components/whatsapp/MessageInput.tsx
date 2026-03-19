@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect, KeyboardEvent, ChangeEvent } from "react";
-import { Paperclip, Send, Smile } from "lucide-react";
+import { Paperclip, Send, Smile, Bot } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { cn } from "@/lib/utils";
 
@@ -93,7 +94,6 @@ export default function MessageInput({ onSend, isBotActive = false, disabled = f
             const newValue =
                 value.slice(0, start) + emojiData.emoji + value.slice(end);
             setValue(newValue);
-            // Restore cursor position after the inserted emoji
             setTimeout(() => {
                 textarea.selectionStart = textarea.selectionEnd =
                     start + emojiData.emoji.length;
@@ -185,40 +185,64 @@ export default function MessageInput({ onSend, isBotActive = false, disabled = f
                 <Send className="w-4 h-4" />
             </button>
 
-            {/* Bot pause alert */}
-            {showBotAlert && (
-                <div className="absolute bottom-full left-0 right-0 mb-0 bg-white border border-slate-200 rounded-t-xl shadow-lg z-50 px-5 py-4">
-                    <p className="text-sm text-navy font-medium mb-1">
-                        Kini esta activo en esta conversacion
-                    </p>
-                    <p className="text-xs text-[#5e7a9a] mb-4">
-                        Enviar un mensaje puede desactivar el chatbot para este paciente. Elige como proceder:
-                    </p>
-                    <div className="flex items-center justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setShowBotAlert(false)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#5e7a9a] hover:bg-slate-100 transition-all"
+            {/* Bot pause alert — modal popup */}
+            <AnimatePresence>
+                {showBotAlert && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                        onClick={() => setShowBotAlert(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="bg-white rounded-[2rem] p-8 max-w-md w-full mx-4 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            Cancelar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSendWithoutPause}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-teal border border-teal/30 hover:bg-teal/5 transition-all"
-                        >
-                            Enviar sin desactivar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSendWithPause}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-all"
-                        >
-                            Enviar y desactivar Kini
-                        </button>
-                    </div>
-                </div>
-            )}
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal/10 to-blue-50 flex items-center justify-center">
+                                    <Bot className="w-5 h-5 text-teal" />
+                                </div>
+                                <h2 className="text-lg font-bold text-[#0d1f35]">
+                                    Kini esta activo
+                                </h2>
+                            </div>
+                            <p className="text-sm text-[#5e7a9a] mb-6 ml-[52px]">
+                                Enviar este mensaje puede desactivar el chatbot para esta conversacion. Elige como proceder.
+                            </p>
+
+                            <div className="flex gap-3 justify-end flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowBotAlert(false)}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSendWithoutPause}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-[#0d1f35] border border-slate-200 hover:border-slate-300 transition-all"
+                                >
+                                    Enviar sin desactivar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSendWithPause}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-rose-500 hover:shadow-lg shadow-md transition-all"
+                                >
+                                    Enviar y desactivar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
