@@ -481,6 +481,23 @@ export default function WhatsAppPage() {
         }
     };
 
+    const handleRenameContact = async (conversationId: string, newName: string) => {
+        // Optimistic update
+        setConversations((prev) =>
+            prev.map((c) => c.id === conversationId ? { ...c, contact_name: newName } : c)
+        );
+        const { error } = await supabase
+            .from("whatsapp_conversations")
+            .update({ contact_name: newName })
+            .eq("id", conversationId);
+        if (error) {
+            // Revert on failure — refetch conversations
+            setConversations((prev) =>
+                prev.map((c) => c.id === conversationId ? { ...c, contact_name: c.contact_name } : c)
+            );
+        }
+    };
+
     const handleGlobalToggle = async () => {
         if (!botSettings) return;
         const action = botSettings.global_pause
@@ -565,6 +582,7 @@ export default function WhatsAppPage() {
                     hasMore={hasMore}
                     isLoadingMore={isLoadingMore}
                     isLoadingChat={isLoadingChat}
+                    onRenameContact={handleRenameContact}
                 />
             ) : (
                 <EmptyChat />

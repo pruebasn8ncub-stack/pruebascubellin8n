@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ChevronDown, Bot, User } from "lucide-react";
+import { Loader2, ChevronDown, Bot, User, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAvatarGradient, getInitials } from "@/lib/avatar";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
@@ -24,6 +24,7 @@ interface ChatPanelProps {
     hasMore: boolean;
     isLoadingMore: boolean;
     isLoadingChat: boolean;
+    onRenameContact: (conversationId: string, newName: string) => void;
 }
 
 function formatDateDivider(timestamp: string): string {
@@ -74,10 +75,14 @@ export default function ChatPanel({
     hasMore,
     isLoadingMore,
     isLoadingChat,
+    onRenameContact,
 }: ChatPanelProps) {
     const [showPausePopup, setShowPausePopup] = useState(false);
     const [showResumePopup, setShowResumePopup] = useState(false);
     const [showScrollButton, setShowScrollButton] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editName, setEditName] = useState("");
+    const nameInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -133,10 +138,49 @@ export default function ChatPanel({
                     >
                         {initials || <User className="w-4 h-4" />}
                     </div>
-                    <div>
-                        <p className="font-bold text-sm text-[#0d1f35] leading-tight">
-                            {conversation.contact_name}
-                        </p>
+                    <div className="min-w-0">
+                        {isEditingName ? (
+                            <input
+                                ref={nameInputRef}
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        const trimmed = editName.trim();
+                                        if (trimmed && trimmed !== conversation.contact_name) {
+                                            onRenameContact(conversation.id, trimmed);
+                                        }
+                                        setIsEditingName(false);
+                                    }
+                                    if (e.key === "Escape") setIsEditingName(false);
+                                }}
+                                onBlur={() => {
+                                    const trimmed = editName.trim();
+                                    if (trimmed && trimmed !== conversation.contact_name) {
+                                        onRenameContact(conversation.id, trimmed);
+                                    }
+                                    setIsEditingName(false);
+                                }}
+                                className="font-bold text-sm text-[#0d1f35] leading-tight bg-slate-50 border border-teal/30 rounded-md px-2 py-0.5 w-full focus:outline-none focus:ring-2 focus:ring-teal/20"
+                            />
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditName(conversation.contact_name);
+                                    setIsEditingName(true);
+                                    setTimeout(() => nameInputRef.current?.select(), 0);
+                                }}
+                                className="group flex items-center gap-1.5 text-left"
+                                title="Editar nombre del contacto"
+                            >
+                                <p className="font-bold text-sm text-[#0d1f35] leading-tight truncate">
+                                    {conversation.contact_name}
+                                </p>
+                                <Pencil className="w-3 h-3 text-slate-300 group-hover:text-teal transition-colors flex-shrink-0" />
+                            </button>
+                        )}
                         <p className="text-xs text-[#5e7a9a] leading-tight">
                             {conversation.phone_number}
                         </p>
