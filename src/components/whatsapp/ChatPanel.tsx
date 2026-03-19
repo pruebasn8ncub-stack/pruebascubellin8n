@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ChevronDown, MessageCircle } from "lucide-react";
+import { Loader2, ChevronDown, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAvatarGradient, getInitials } from "@/lib/avatar";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
@@ -147,13 +147,10 @@ export default function ChatPanel({
                     onClick={() => conversation.is_bot_paused ? setShowResumePopup(true) : setShowPausePopup(true)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0 transition-all"
                 >
-                    <MessageCircle className={cn("w-4 h-4", conversation.is_bot_paused ? "text-red-400" : "text-teal")} />
-                    <span className={cn("text-xs font-medium", conversation.is_bot_paused ? "text-red-400" : "text-navy")}>
-                        Bot chat
-                    </span>
+                    <Bot className={cn("w-4 h-4", conversation.is_bot_paused ? "text-red-500" : "text-emerald-500")} />
                     <div className={cn(
                         "relative w-9 h-5 rounded-full transition-colors duration-200",
-                        conversation.is_bot_paused ? "bg-red-300" : "bg-teal"
+                        conversation.is_bot_paused ? "bg-red-500" : "bg-emerald-500"
                     )}>
                         <div className={cn(
                             "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
