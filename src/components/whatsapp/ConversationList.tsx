@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { Search, Bot } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { WhatsAppConversation, WhatsAppBotSettings } from "@/types/whatsapp";
 import ConversationItem from "./ConversationItem";
@@ -27,6 +28,7 @@ export default function ConversationList({
     const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
     const [botFilter, setBotFilter] = useState<"all" | "active" | "paused">("all");
     const [showNeedsHuman, setShowNeedsHuman] = useState(false);
+    const [showGlobalConfirm, setShowGlobalConfirm] = useState(false);
     const [headerShadow, setHeaderShadow] = useState(false);
     const [togglePressed, setTogglePressed] = useState(false);
     const listRef = useRef<HTMLDivElement>(null);
@@ -38,8 +40,13 @@ export default function ConversationList({
     }, []);
 
     function handleToggleClick() {
+        setShowGlobalConfirm(true);
+    }
+
+    function confirmGlobalToggle() {
         setTogglePressed(true);
         onGlobalToggle();
+        setShowGlobalConfirm(false);
         setTimeout(() => setTogglePressed(false), 200);
     }
 
@@ -214,6 +221,60 @@ export default function ConversationList({
                 {/* Bottom gradient fade for scrollable list */}
                 <div className="sticky bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent pointer-events-none" />
             </div>
+
+            {/* Global toggle confirmation popup */}
+            <AnimatePresence>
+                {showGlobalConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                        onClick={() => setShowGlobalConfirm(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="bg-white rounded-[2rem] p-8 max-w-md w-full mx-4 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h2 className="text-lg font-bold text-[#0d1f35] mb-1">
+                                {botSettings.global_pause ? "Reactivar Kini globalmente" : "Pausar Kini globalmente"}
+                            </h2>
+                            <p className="text-sm text-[#5e7a9a] mb-6">
+                                {botSettings.global_pause
+                                    ? "El chatbot volvera a responder en todas las conversaciones."
+                                    : "El chatbot dejara de responder en todas las conversaciones."}
+                            </p>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowGlobalConfirm(false)}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={confirmGlobalToggle}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-xl text-sm font-semibold text-white hover:shadow-lg shadow-md transition-all",
+                                        botSettings.global_pause
+                                            ? "bg-gradient-to-r from-emerald-500 to-teal"
+                                            : "bg-gradient-to-r from-red-500 to-rose-500"
+                                    )}
+                                >
+                                    {botSettings.global_pause ? "Reactivar" : "Pausar"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
