@@ -229,14 +229,14 @@ export default function MessageInput({ onSend, isBotActive = false, disabled = f
                                     onClick={handleSendWithoutPause}
                                     className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-teal to-blue-500 hover:shadow-lg shadow-md transition-all"
                                 >
-                                    Enviar sin desactivar
+                                    Solo enviar
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleSendWithPause}
                                     className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-rose-500 hover:shadow-lg shadow-md transition-all"
                                 >
-                                    Enviar y desactivar
+                                    Enviar y pausar
                                 </button>
                             </div>
                         </motion.div>
