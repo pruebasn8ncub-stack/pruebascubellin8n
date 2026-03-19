@@ -439,6 +439,27 @@ export default function WhatsAppPage() {
         });
     };
 
+    const handleResolveTicket = async (conversationId: string) => {
+        const { error } = await supabase
+            .from("whatsapp_conversations")
+            .update({
+                needs_human: false,
+                needs_human_status: "resolved",
+                needs_human_resolved_at: new Date().toISOString(),
+            })
+            .eq("id", conversationId);
+
+        if (!error) {
+            setConversations((prev) =>
+                prev.map((c) =>
+                    c.id === conversationId
+                        ? { ...c, needs_human: false, needs_human_status: "resolved" as const, needs_human_resolved_at: new Date().toISOString() }
+                        : c
+                )
+            );
+        }
+    };
+
     const handleGlobalToggle = async () => {
         if (!botSettings) return;
         const action = botSettings.global_pause
@@ -511,6 +532,7 @@ export default function WhatsAppPage() {
                     onSendMessage={handleSendMessage}
                     onBotPause={handleBotPause}
                     onBotResume={handleBotResume}
+                    onResolveTicket={handleResolveTicket}
                     onLoadMore={handleLoadMore}
                     hasMore={hasMore}
                     isLoadingMore={isLoadingMore}

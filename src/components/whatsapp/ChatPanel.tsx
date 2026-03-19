@@ -5,6 +5,7 @@ import { Loader2, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
 import BotStatusBar from "./BotStatusBar";
+import TicketBanner from "./TicketBanner";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 import PausePopup from "./PausePopup";
@@ -18,6 +19,7 @@ interface ChatPanelProps {
     onSendMessage: (content: string) => void;
     onBotPause: (sendTransition: boolean, message: string) => void;
     onBotResume: (sendTransition: boolean, message: string) => void;
+    onResolveTicket: (conversationId: string) => void;
     onLoadMore: () => void;
     hasMore: boolean;
     isLoadingMore: boolean;
@@ -92,6 +94,7 @@ export default function ChatPanel({
     onSendMessage,
     onBotPause,
     onBotResume,
+    onResolveTicket,
     onLoadMore,
     hasMore,
     isLoadingMore,
@@ -187,6 +190,15 @@ export default function ChatPanel({
                 isBotPaused={conversation.is_bot_paused}
                 isGlobalPaused={botSettings.global_pause}
             />
+
+            {/* Ticket Banner */}
+            {conversation.needs_human && conversation.needs_human_status !== "resolved" && (
+                <TicketBanner
+                    reason={conversation.needs_human_reason}
+                    since={conversation.needs_human_since}
+                    onResolve={() => onResolveTicket(conversation.id)}
+                />
+            )}
 
             {/* Messages area */}
             <div className="flex-1 relative overflow-hidden">
