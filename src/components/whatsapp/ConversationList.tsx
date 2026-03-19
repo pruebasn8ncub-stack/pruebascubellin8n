@@ -131,69 +131,75 @@ export default function ConversationList({
                     />
                 </div>
 
-                {/* Filters */}
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {/* Read filters */}
-                    {(["all", "unread", "read"] as const).map((v) => {
-                        const labels = { all: "Todos", unread: "No leídos", read: "Leídos" };
-                        return (
-                            <button
-                                key={v}
-                                type="button"
-                                onClick={() => setReadFilter(readFilter === v ? "all" : v)}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-lg text-[0.68rem] font-medium transition-all",
-                                    readFilter === v
-                                        ? "bg-teal/10 text-teal border border-teal/20"
-                                        : "bg-[#f5f8fc] text-[#5e7a9a] border border-transparent hover:bg-[#edf2f7]"
-                                )}
-                            >
-                                {labels[v]}
-                            </button>
-                        );
-                    })}
-                    <div className="w-px h-5 bg-slate-200 self-center mx-0.5" />
-                    {/* Bot filters */}
-                    {(["active", "paused"] as const).map((v) => {
-                        const labels = { active: "Bot activo", paused: "Bot pausado" };
-                        return (
-                            <button
-                                key={v}
-                                type="button"
-                                onClick={() => { setBotFilter(botFilter === v ? "all" : v); setShowNeedsHuman(false); }}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-lg text-[0.68rem] font-medium transition-all",
-                                    botFilter === v && !showNeedsHuman
-                                        ? v === "active"
-                                            ? "bg-teal/10 text-teal border border-teal/20"
-                                            : "bg-red-50 text-red-400 border border-red-200/50"
-                                        : "bg-[#f5f8fc] text-[#5e7a9a] border border-transparent hover:bg-[#edf2f7]"
-                                )}
-                            >
-                                {labels[v]}
-                            </button>
-                        );
-                    })}
-                    {needsHumanCount > 0 && (
-                        <>
-                            <div className="w-px h-5 bg-slate-200 self-center mx-0.5" />
+                {/* Filters — segmented control */}
+                <div className="mt-2.5 space-y-2">
+                    {/* Row 1: Read status — segmented control */}
+                    <div className="flex rounded-lg bg-[#f0f4f8] p-0.5">
+                        {(["all", "unread", "read"] as const).map((v) => {
+                            const labels = { all: "Todos", unread: "No leídos", read: "Leídos" };
+                            const isActive = readFilter === v && !showNeedsHuman;
+                            return (
+                                <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => { setReadFilter(v); setShowNeedsHuman(false); }}
+                                    className={cn(
+                                        "flex-1 py-1.5 text-[0.7rem] font-medium rounded-md transition-all duration-150",
+                                        isActive
+                                            ? "bg-white text-navy shadow-sm"
+                                            : "text-[#5e7a9a] hover:text-navy"
+                                    )}
+                                >
+                                    {labels[v]}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Row 2: Bot status + Atención */}
+                    <div className="flex gap-1.5">
+                        {(["active", "paused"] as const).map((v) => {
+                            const isActive = botFilter === v && !showNeedsHuman;
+                            return (
+                                <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => { setBotFilter(botFilter === v ? "all" : v); setShowNeedsHuman(false); }}
+                                    className={cn(
+                                        "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.68rem] font-medium transition-all border",
+                                        isActive
+                                            ? v === "active"
+                                                ? "bg-teal/10 text-teal border-teal/20"
+                                                : "bg-red-50 text-red-500 border-red-200/50"
+                                            : "bg-transparent text-[#5e7a9a] border-slate-200 hover:bg-[#f5f8fc]"
+                                    )}
+                                >
+                                    <span className={cn(
+                                        "w-1.5 h-1.5 rounded-full",
+                                        v === "active" ? "bg-teal" : "bg-red-400"
+                                    )} />
+                                    {v === "active" ? "Activo" : "Pausado"}
+                                </button>
+                            );
+                        })}
+                        {needsHumanCount > 0 && (
                             <button
                                 type="button"
                                 onClick={() => { setShowNeedsHuman(!showNeedsHuman); setReadFilter("all"); setBotFilter("all"); }}
                                 className={cn(
-                                    "px-2.5 py-1 rounded-lg text-[0.68rem] font-medium transition-all flex items-center gap-1",
+                                    "ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.68rem] font-semibold transition-all border",
                                     showNeedsHuman
-                                        ? "bg-amber-50 text-amber-600 border border-amber-200/50"
-                                        : "bg-amber-50 text-amber-600 border border-transparent hover:border-amber-200/50 animate-pulse"
+                                        ? "bg-amber-100 text-amber-700 border-amber-300"
+                                        : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 animate-pulse"
                                 )}
                             >
-                                Atencion
-                                <span className="min-w-[16px] h-4 rounded-full bg-amber-500 text-white text-[0.55rem] font-bold flex items-center justify-center px-1">
+                                Atención
+                                <span className="min-w-[18px] h-[18px] rounded-full bg-amber-500 text-white text-[0.6rem] font-bold flex items-center justify-center px-1">
                                     {needsHumanCount}
                                 </span>
                             </button>
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 
