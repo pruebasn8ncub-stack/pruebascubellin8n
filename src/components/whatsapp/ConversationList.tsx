@@ -97,11 +97,11 @@ export default function ConversationList({
                                 togglePressed && "scale-95",
                             )}
                         >
-                            <Bot className={cn("w-4 h-4", botSettings.global_pause ? "text-red-400" : "text-teal")} />
+                            <Bot className={cn("w-4 h-4", botSettings.global_pause ? "text-red-500" : "text-emerald-500")} />
                             {/* Toggle switch */}
                             <div className={cn(
                                 "relative w-9 h-5 rounded-full transition-colors duration-200",
-                                botSettings.global_pause ? "bg-red-300" : "bg-teal"
+                                botSettings.global_pause ? "bg-red-500" : "bg-emerald-500"
                             )}>
                                 <div className={cn(
                                     "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
@@ -164,19 +164,21 @@ export default function ConversationList({
                                     type="button"
                                     onClick={() => { setBotFilter(botFilter === v ? "all" : v); setShowNeedsHuman(false); }}
                                     className={cn(
-                                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.68rem] font-medium transition-all border",
+                                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.68rem] font-semibold transition-all border",
                                         v === "active"
                                             ? isSelected
-                                                ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
-                                                : "bg-emerald-50/40 text-emerald-500/70 border-emerald-100 hover:bg-emerald-50 hover:shadow-[0_0_6px_rgba(16,185,129,0.1)]"
+                                                ? "bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/30"
+                                                : "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200"
                                             : isSelected
-                                                ? "bg-red-50 text-red-500 border-red-200 shadow-[0_0_8px_rgba(239,68,68,0.15)]"
-                                                : "bg-red-50/40 text-red-400/70 border-red-100 hover:bg-red-50 hover:shadow-[0_0_6px_rgba(239,68,68,0.1)]"
+                                                ? "bg-red-500 text-white border-red-600 shadow-md shadow-red-500/30"
+                                                : "bg-red-100 text-red-600 border-red-300 hover:bg-red-200"
                                     )}
                                 >
                                     <span className={cn(
                                         "w-1.5 h-1.5 rounded-full",
-                                        v === "active" ? "bg-emerald-500" : "bg-red-400"
+                                        isSelected
+                                            ? "bg-white"
+                                            : v === "active" ? "bg-emerald-500" : "bg-red-500"
                                     )} />
                                     {v === "active" ? "Activo" : "Pausado"}
                                 </button>
