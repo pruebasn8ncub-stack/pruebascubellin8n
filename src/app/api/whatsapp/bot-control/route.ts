@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getAuthUser } from '@/lib/auth';
 import { sendTextMessage } from '@/lib/evolution-api';
 import { ApiResponseBuilder } from '@/lib/api-response';
 import { handleError } from '@/lib/error-handler';
@@ -25,36 +26,6 @@ const botControlSchema = z.object({
   sendTransition: z.boolean().optional().default(false),
   transitionMessage: z.string().optional(),
 });
-
-// ---------------------------------------------------------------------------
-// Auth helper
-// ---------------------------------------------------------------------------
-
-async function getAuthUser(
-  request: NextRequest
-): Promise<{ id: string; role: string } | null> {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-
-  const token = authHeader.slice(7);
-
-  const {
-    data: { user },
-    error,
-  } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !user) return null;
-
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile) return null;
-
-  return { id: user.id, role: profile.role as string };
-}
 
 // ---------------------------------------------------------------------------
 // Route handler

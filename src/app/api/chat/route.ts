@@ -1,18 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL!;
+const chatSchema = z.object({
+    message: z.string().min(1).max(2000),
+    sessionId: z.string().min(1).max(100),
+});
+
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 20; // requests
+const RATE_WINDOW = 60_000; // 1 minuto
+
+function isRateLimited(ip: string): boolean {
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.resetTime) {
+        rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
+        return false;
+    }
+    entry.count++;
+    return entry.count > RATE_LIMIT;
+}
 
 export async function POST(request: NextRequest) {
+    const ip =
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        "unknown";
+
+    if (isRateLimited(ip)) {
+        return NextResponse.json(
+            { error: "Demasiadas solicitudes. Intenta en un momento." },
+            { status: 429 }
+        );
+    }
+
+    const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+    if (!N8N_WEBHOOK_URL) {
+        return NextResponse.json(
+            { error: "Service unavailable" },
+            { status: 503 }
+        );
+    }
+
     try {
         const body = await request.json();
-        const { message, sessionId } = body;
+        const parsed = chatSchema.safeParse(body);
 
-        if (!message || !sessionId) {
+        if (!parsed.success) {
             return NextResponse.json(
                 { error: "Missing 'message' and/or 'sessionId'" },
                 { status: 400 }
             );
         }
+
+        const { message, sessionId } = parsed.data;
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
@@ -60,7 +100,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.error("[Chat API] Unexpected error:", error);
+        console.error(
+            "[Chat API] Unexpected error:",
+            error instanceof Error ? error.message : "Unknown error"
+        );
         return NextResponse.json(
             { error: "Error interno del servidor." },
             { status: 500 }

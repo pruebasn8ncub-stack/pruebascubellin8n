@@ -51,22 +51,11 @@ export interface WhatsAppBotSettings {
   updated_at: string;
 }
 
-export interface SendMessageRequest {
-  conversationId: string;
-  content: string;
-  mediaUrl?: string;
-  mediaType?: MediaType;
-}
-
 export interface BotControlRequest {
   action: 'pause' | 'resume' | 'global_pause' | 'global_resume';
   conversationId?: string;
   sendTransition?: boolean;
   transitionMessage?: string;
-}
-
-export interface MarkReadRequest {
-  conversationId: string;
 }
 
 export interface EvolutionWebhookPayload {

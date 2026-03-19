@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * Evolution API v2.3.7 client helper
  *

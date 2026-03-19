@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PausePopupProps {
@@ -11,19 +10,6 @@ interface PausePopupProps {
 }
 
 export default function PausePopup({ isOpen, onClose, onPause, defaultMessage }: PausePopupProps) {
-    const [message, setMessage] = useState(defaultMessage);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        setMessage(defaultMessage);
-    }, [defaultMessage, isOpen]);
-
-    useEffect(() => {
-        if (isOpen) {
-            textareaRef.current?.focus();
-        }
-    }, [isOpen]);
-
     return (
         <AnimatePresence>
             {isOpen && (
@@ -60,7 +46,7 @@ export default function PausePopup({ isOpen, onClose, onPause, defaultMessage }:
                             </button>
                             <button
                                 type="button"
-                                onClick={() => onPause(false, message)}
+                                onClick={() => onPause(false, defaultMessage)}
                                 className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-rose-500 hover:shadow-lg shadow-md transition-all"
                             >
                                 Pausar

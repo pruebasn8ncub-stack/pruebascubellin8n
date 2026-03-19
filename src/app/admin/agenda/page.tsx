@@ -388,7 +388,7 @@ export default function AgendaPage() {
                                 disabled={deletingFromListLoading}
                                 onClick={async () => {
                                     setDeletingFromListLoading(true);
-                                    await supabase.from('appointments').delete().eq('id', deletingFromList.id);
+                                    await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', deletingFromList.id);
                                     setDeletingFromListLoading(false);
                                     setDeletingFromList(null);
                                     fetchAppointments(dateRange.start, dateRange.end);
@@ -760,9 +760,7 @@ function AppointmentDetail({
     const handleDelete = async () => {
         setDeleting(true);
         try {
-            // Delete allocations first (FK constraint)
-            await supabase.from('appointment_allocations').delete().eq('appointment_id', apt.id);
-            const { error } = await supabase.from('appointments').delete().eq('id', apt.id);
+            const { error } = await supabase.from('appointments').update({ status: 'cancelled' }).eq('id', apt.id);
             if (error) throw error;
             onDeleted();
         } catch (err: any) {

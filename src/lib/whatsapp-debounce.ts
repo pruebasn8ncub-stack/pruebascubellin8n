@@ -1,3 +1,5 @@
+import 'server-only'
+
 /**
  * Debounced bot reply processing.
  *

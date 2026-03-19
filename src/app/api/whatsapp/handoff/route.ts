@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendTextMessage } from '@/lib/evolution-api';
 
-const ADMIN_PHONE = '56992533044';
+const ADMIN_PHONE = process.env.WHATSAPP_ADMIN_PHONE;
 
 function toString(v: unknown): string {
   if (typeof v === 'string') return v;
@@ -53,12 +53,24 @@ function extractFields(raw: unknown): { senderPhone: string; reason: string; sum
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const secret = request.nextUrl.searchParams.get('secret');
+  const secret =
+    request.headers.get('x-webhook-secret') ||
+    request.nextUrl.searchParams.get('secret');
   const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
 
   if (!expectedSecret || secret !== expectedSecret) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  if (!ADMIN_PHONE) {
+    console.error('[Handoff] Missing WHATSAPP_ADMIN_PHONE env var');
+    return NextResponse.json(
+      { success: false, error: 'Service configuration error' },
+      { status: 503 }
+    );
+  }
+
+  const adminPhone: string = ADMIN_PHONE;
 
   try {
     const raw = await request.json();
@@ -114,7 +126,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const whatsappMsg = `\u{1F6A8} *ATENCION REQUERIDA*\nPaciente: *${displayName}*${showPhone}\n\n${finalSummary}`;
 
     try {
-      await sendTextMessage(ADMIN_PHONE, whatsappMsg);
+      await sendTextMessage(adminPhone, whatsappMsg);
     } catch {
       // Don't fail if notification fails
     }

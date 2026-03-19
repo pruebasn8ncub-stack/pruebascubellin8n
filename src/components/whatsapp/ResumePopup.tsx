@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ResumePopupProps {
@@ -11,19 +10,6 @@ interface ResumePopupProps {
 }
 
 export default function ResumePopup({ isOpen, onClose, onResume, defaultMessage }: ResumePopupProps) {
-    const [message, setMessage] = useState(defaultMessage);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        setMessage(defaultMessage);
-    }, [defaultMessage, isOpen]);
-
-    useEffect(() => {
-        if (isOpen) {
-            textareaRef.current?.focus();
-        }
-    }, [isOpen]);
-
     return (
         <AnimatePresence>
             {isOpen && (
@@ -60,7 +46,7 @@ export default function ResumePopup({ isOpen, onClose, onResume, defaultMessage 
                             </button>
                             <button
                                 type="button"
-                                onClick={() => onResume(false, message)}
+                                onClick={() => onResume(false, defaultMessage)}
                                 className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal hover:shadow-lg shadow-md transition-all"
                             >
                                 Reactivar

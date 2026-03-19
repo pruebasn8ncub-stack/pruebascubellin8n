@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getAvatarGradient, getInitials } from "@/lib/avatar";
 import type { WhatsAppConversation, WhatsAppMessage, WhatsAppBotSettings } from "@/types/whatsapp";
-import BotStatusBar from "./BotStatusBar";
 import TicketBanner from "./TicketBanner";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
@@ -23,32 +23,6 @@ interface ChatPanelProps {
     onLoadMore: () => void;
     hasMore: boolean;
     isLoadingMore: boolean;
-}
-
-const AVATAR_GRADIENTS = [
-    "from-emerald-400 to-emerald-600",
-    "from-blue-400 to-blue-600",
-    "from-purple-400 to-purple-600",
-    "from-pink-400 to-pink-600",
-    "from-orange-400 to-orange-600",
-    "from-teal-400 to-teal-600",
-    "from-indigo-400 to-indigo-600",
-    "from-rose-400 to-rose-600",
-];
-
-function getAvatarGradient(name: string): string {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
-}
-
-function getInitials(name: string): string {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0]?.[0] ?? "";
-    const second = parts[1]?.[0] ?? "";
-    return (first + second).toUpperCase();
 }
 
 function formatDateDivider(timestamp: string): string {

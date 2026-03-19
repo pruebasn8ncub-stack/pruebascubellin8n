@@ -34,8 +34,7 @@ export function BookingForm() {
     const onSubmit = async (data: BookingFormValues) => {
         // Simulate API call
         await new Promise((resolve) => setTimeout(resolve, 1500));
-        console.log("Form submitted:", data);
-        setIsSuccess(true);
+setIsSuccess(true);
         reset();
 
         // Reset success message after 10 seconds

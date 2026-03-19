@@ -267,7 +267,6 @@ function LocationBubble({ content }: { content: string }) {
     if (!loc) return null;
 
     const mapsUrl = `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
-    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${loc.lat},${loc.lng}&zoom=15&size=280x150&scale=2&markers=color:red%7C${loc.lat},${loc.lng}&key=`;
 
     return (
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="block group">

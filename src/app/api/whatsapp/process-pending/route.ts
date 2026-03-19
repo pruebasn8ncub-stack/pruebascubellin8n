@@ -10,7 +10,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processPendingBotReplies } from '@/lib/whatsapp-debounce';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const secret = request.nextUrl.searchParams.get('secret');
+  const secret =
+    request.headers.get('x-webhook-secret') ||
+    request.nextUrl.searchParams.get('secret');
   const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
 
   if (!expectedSecret || secret !== expectedSecret) {

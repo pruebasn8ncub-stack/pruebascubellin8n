@@ -84,11 +84,3 @@ export interface ScheduleException {
     ends_at: string;
     reason?: string;
 }
-
-// Request DTOs
-export interface CreateAppointmentRequestDTO {
-    patient_id: string;
-    service_id: string;
-    starts_at: string; // Client gives requested start time
-    notes?: string;
-}

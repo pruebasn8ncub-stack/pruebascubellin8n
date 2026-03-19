@@ -637,8 +637,10 @@ async function handleMessagesUpdate(
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // Secret validation
-    const secret = request.nextUrl.searchParams.get('secret');
+    // Secret validation — header takes priority, query string as fallback (migration period)
+    const secret =
+      request.headers.get('x-webhook-secret') ||
+      request.nextUrl.searchParams.get('secret');
     const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
 
     if (!expectedSecret || secret !== expectedSecret) {

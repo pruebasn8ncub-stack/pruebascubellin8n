@@ -199,8 +199,7 @@ export function ChatWidget() {
                                         </div>
                                     </div>
 
-                                    {messages.map((msg, i) => {
-                                        const isLastMessage = i === messages.length - 1;
+                                    {messages.map((msg) => {
                                         const isUser = msg.sender === "user";
 
                                         // Hide typing indicator when there is an active text coming in.
