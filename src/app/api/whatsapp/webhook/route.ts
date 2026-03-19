@@ -56,24 +56,29 @@ async function findOrCreateConversation(
     .single();
 
   if (existing) {
-    // Update avatar if missing
-    if (!existing.contact_avatar_url) {
-      const avatarUrl = await fetchProfilePicture(phone);
-      if (avatarUrl) {
-        await supabaseAdmin
-          .from('whatsapp_conversations')
-          .update({ contact_avatar_url: avatarUrl })
-          .eq('id', existing.id);
-        existing.contact_avatar_url = avatarUrl;
-      }
+    const updates: Record<string, string> = {};
+
+    // Sync avatar — refetch and update if changed or missing
+    const avatarUrl = await fetchProfilePicture(phone);
+    if (avatarUrl && avatarUrl !== existing.contact_avatar_url) {
+      updates.contact_avatar_url = avatarUrl;
+      existing.contact_avatar_url = avatarUrl;
+    } else if (!avatarUrl && existing.contact_avatar_url) {
+      updates.contact_avatar_url = '';
+      existing.contact_avatar_url = null;
     }
-    // Update contact name if pushName is available and different
+
+    // Sync pushName
     if (pushName && pushName !== existing.contact_name) {
+      updates.contact_name = pushName;
+      existing.contact_name = pushName;
+    }
+
+    if (Object.keys(updates).length > 0) {
       await supabaseAdmin
         .from('whatsapp_conversations')
-        .update({ contact_name: pushName })
+        .update(updates)
         .eq('id', existing.id);
-      existing.contact_name = pushName;
     }
     return existing as WhatsAppConversation;
   }
