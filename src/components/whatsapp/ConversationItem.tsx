@@ -112,11 +112,13 @@ export default function ConversationItem({
                             </span>
                         )}
                         {conversation.is_bot_paused ? (
-                            <span className="text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-red-50 text-red-400 font-medium flex-shrink-0">
+                            <span className="flex items-center gap-1 text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-red-100 text-red-600 font-medium flex-shrink-0 border border-red-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                                 Pausado
                             </span>
                         ) : (
-                            <span className="text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-teal/10 text-teal font-medium flex-shrink-0">
+                            <span className="flex items-center gap-1 text-[0.6rem] leading-none px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-medium flex-shrink-0 border border-emerald-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                 Activo
                             </span>
                         )}
