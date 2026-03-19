@@ -80,18 +80,22 @@ export default function ConversationItem({
                     src={conversation.contact_avatar_url}
                     alt={conversation.contact_name}
                     className="flex-shrink-0 w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                    }}
                 />
-            ) : (
-                <div
-                    className={cn(
-                        "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
-                        "text-white font-semibold text-sm select-none bg-gradient-to-br shadow-sm",
-                        avatarGradient
-                    )}
-                >
-                    {initials || "?"}
-                </div>
-            )}
+            ) : null}
+            <div
+                className={cn(
+                    "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
+                    "text-white font-semibold text-sm select-none bg-gradient-to-br shadow-sm",
+                    avatarGradient,
+                    conversation.contact_avatar_url ? "hidden" : ""
+                )}
+            >
+                {initials || "?"}
+            </div>
 
             {/* Body */}
             <div className="flex-1 min-w-0">

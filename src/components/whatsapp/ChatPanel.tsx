@@ -116,17 +116,21 @@ export default function ChatPanel({
                             src={conversation.contact_avatar_url}
                             alt={conversation.contact_name}
                             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                            }}
                         />
-                    ) : (
-                        <div
-                            className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 select-none bg-gradient-to-br shadow-sm",
-                                avatarGradient
-                            )}
-                        >
-                            {initials || "?"}
-                        </div>
-                    )}
+                    ) : null}
+                    <div
+                        className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 select-none bg-gradient-to-br shadow-sm",
+                            avatarGradient,
+                            conversation.contact_avatar_url ? "hidden" : ""
+                        )}
+                    >
+                        {initials || "?"}
+                    </div>
                     <div>
                         <p className="font-bold text-sm text-[#0d1f35] leading-tight">
                             {conversation.contact_name}
