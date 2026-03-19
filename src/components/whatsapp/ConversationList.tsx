@@ -98,9 +98,6 @@ export default function ConversationList({
                             )}
                         >
                             <Bot className={cn("w-4 h-4", botSettings.global_pause ? "text-red-400" : "text-teal")} />
-                            <span className={cn("text-xs font-medium", botSettings.global_pause ? "text-red-400" : "text-navy")}>
-                                Kini
-                            </span>
                             {/* Toggle switch */}
                             <div className={cn(
                                 "relative w-9 h-5 rounded-full transition-colors duration-200",
