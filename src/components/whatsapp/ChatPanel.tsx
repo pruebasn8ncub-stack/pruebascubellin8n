@@ -185,12 +185,6 @@ export default function ChatPanel({
                 </button>
             </div>
 
-            {/* Bot Status Bar */}
-            <BotStatusBar
-                isBotPaused={conversation.is_bot_paused}
-                isGlobalPaused={botSettings.global_pause}
-            />
-
             {/* Ticket Banner */}
             {conversation.needs_human && conversation.needs_human_status !== "resolved" && (
                 <TicketBanner
